@@ -1,0 +1,34 @@
+# ARENA-GAME
+
+**ARENA-GAME** is a portfolio project showcasing a fast-paced arena survival game powered by a custom C++ game engine. Fight off waves of enemies, upgrade your hero, and master a dynamic skill tree — all built from the ground up to demonstrate modern engine architecture and gameplay systems.
+
+---
+
+## 🛠 Tech Stack
+
+- **Language:** C++20
+- **Graphics/Windowing:** SDL2 or SFML *(final decision pending)*
+- **Rendering Backend:** OpenGL *(Vulkan optional, time permitting)*
+- **Build System:** CMake
+- **Version Control:** Git + GitHub
+
+---
+
+## 🧩 Engine Features
+
+- [ ] **ECS (Entity-Component-System)** architecture
+- [ ] Custom 2D renderer (OpenGL-based)
+- [ ] Scene & level management
+- [ ] Input handling system
+- [ ] Resource loader & asset manager (textures, audio, config)
+- [ ] Audio playback support
+
+---
+
+## 🧪 Gameplay Features
+
+- [ ] Playable hero with upgradeable skills
+- [ ] Combat mechanics: ranged, melee, projectiles
+- [ ] Skill tree UI and progression logic
+
+---
