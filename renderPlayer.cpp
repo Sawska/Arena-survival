@@ -1,26 +1,9 @@
-#include "renderPlayer.h"
+#include "render/renderPlayer.h"
 
-RenderPlayer::RenderPlayer()
-{
+RenderPlayer::RenderPlayer(Player* p) : player(p) {}
 
-}
-
-void RenderPlayer::draw(int x, int y, int playerWidth, int playerHeight, SDL_Renderer *renderer)
-{
-    SDL_SetRenderDrawColor(renderer,255,0,0,255);
-
-    SDL_Rect playerRect;
-
-    playerRect.x = x;
-    playerRect.y = y;
-    playerRect.w = playerWidth;
-    playerRect.h = playerHeight;
-
-    SDL_RenderFillRect(renderer,&playerRect);
-
-    SDL_RenderPresent(renderer);
-}
-
-RenderPlayer::~RenderPlayer()
-{
+void RenderPlayer::draw(SDL_Renderer* renderer) {
+    SDL_Rect rect{ player->x, player->y, 50, 50 };
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // red
+    SDL_RenderFillRect(renderer, &rect);
 }

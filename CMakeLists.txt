@@ -6,14 +6,23 @@ set(CMAKE_CXX_STANDARD 17)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(SDL2 REQUIRED sdl2)
 
-
 link_directories(${SDL2_LIBRARY_DIRS})
 
+add_executable(GameEngine
+    main.cpp
+    engine.cpp
+    renderer.cpp
+    player.cpp
+    renderPlayer.cpp
+    renderEnemy.cpp
+    enemy.cpp
+    spawner.cpp
+)
 
 
-add_executable(GameEngine engine.cpp renderer.cpp  main.cpp)
-
-target_include_directories(GameEngine PRIVATE ${SDL2_INCLUDE_DIRS})
-
+target_include_directories(GameEngine PRIVATE
+    ${SDL2_INCLUDE_DIRS}
+    ${CMAKE_SOURCE_DIR}/include
+)
 
 target_link_libraries(GameEngine ${SDL2_LIBRARIES})

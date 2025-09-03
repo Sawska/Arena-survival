@@ -1,24 +1,20 @@
 #ifndef PLAYER_H
-
 #define PLAYER_H
 
-
-
 class Player {
-    public:
+public:
+    int x, y;
     int hp;
     int score;
-    int x, y;
-    int attackPower; 
-    
-    Player();
+    bool isAlive = true;
+
+    Player(int startX = 100, int startY = 100);
+
+    void move(int dx, int dy);
     void takeDamage(int damage);
     void addScore(int points);
-    void reset();
 
-    ~Player();
-
-
+    bool isDead(); 
 };
 
-#endif //PLAYER_H
+#endif

@@ -1,13 +1,14 @@
 #ifndef RENDERPLAYER_H
 #define RENDERPLAYER_H
 
-#include "SDL2/SDL.h"
+#include <SDL2/SDL.h>
+#include "../logic/player.h"
 
 class RenderPlayer {
+    Player* player;
 public:
-    RenderPlayer();
-    void draw(int x, int y, int playerWidth = 50, int playerHeight = 50, SDL_Renderer* renderer = nullptr);
-    ~RenderPlayer();
+    RenderPlayer(Player* p);
+    void draw(SDL_Renderer* renderer);
 };
 
-#endif // RENDERPLAYER_H
+#endif
