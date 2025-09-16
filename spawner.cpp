@@ -3,18 +3,60 @@
 #include <ctime>   
 #include <iostream>
 
-Spawner::Spawner(std::vector<Enemy>& enemyList, int interval)
-    : enemies(enemyList), spawnInterval(interval), frameCount(0) {
-    std::srand(static_cast<unsigned int>(std::time(nullptr))); 
-}
-void Spawner::update() {
-    frameCount++;
-    if (frameCount >= spawnInterval) {
-        frameCount = 0;
-        int x = std::rand() % 800; 
-        int y = std::rand() % 600; 
-        enemies.emplace_back(x, y);
-        std::cout << "Spawned enemy at (" << x << ", " << y << ")\n";
-    }
+Spawner::Spawner(std::vector<std::unique_ptr<Enemy>>& enemyList,
+                 std::vector<Bullet>* enemyBulletsVector,
+                 int interval)
+    : enemies(enemyList), enemyBullets(enemyBulletsVector),
+      spawnInterval(interval), frameCount(0)
+{
+    std::srand(static_cast<unsigned int>(std::time(nullptr)));
 }
 
+
+void Spawner::update(Uint32 elapsedTime) {
+    frameCount++;
+
+    int currentSpawnInterval = spawnInterval;
+    if (elapsedTime > 300000) currentSpawnInterval = spawnInterval / 4; 
+    else if (elapsedTime > 180000) currentSpawnInterval = spawnInterval / 2;
+    else if (elapsedTime > 60000) currentSpawnInterval = spawnInterval * 3 / 4;
+
+    if (frameCount >= currentSpawnInterval) {
+        frameCount = 0;
+        int spawnCount = 1;
+        if (elapsedTime > 300000) spawnCount = 3; 
+        else if (elapsedTime > 180000) spawnCount = 2;
+
+        for (int i = 0; i < spawnCount; i++) {
+            int x = std::rand() % 800;
+            int y = std::rand() % 600;
+            int roll = std::rand() % 100;
+
+            if (elapsedTime < 60000) { 
+                enemies.push_back(std::make_unique<Enemy>(x, y, 50, 10));
+                std::cout << "Spawned NORMAL enemy at (" << x << ", " << y << ")\n";
+            } else if (elapsedTime < 180000) { 
+                if (roll < 70)
+                    enemies.push_back(std::make_unique<Enemy>(x, y, 50, 10));
+                else
+                    enemies.push_back(std::make_unique<FastEnemy>(x, y));
+            } else if (elapsedTime < 300000) { 
+                if (roll < 50)
+                    enemies.push_back(std::make_unique<Enemy>(x, y, 50, 10));
+                else if (roll < 80)
+                    enemies.push_back(std::make_unique<FastEnemy>(x, y));
+                else
+                    enemies.push_back(std::make_unique<TankEnemy>(x, y));
+            } else { 
+                if (roll < 40)
+                    enemies.push_back(std::make_unique<Enemy>(x, y, 50, 10));
+                else if (roll < 70)
+                    enemies.push_back(std::make_unique<FastEnemy>(x, y));
+                else if (roll < 90)
+                    enemies.push_back(std::make_unique<TankEnemy>(x, y));
+                else
+                    enemies.push_back(std::make_unique<RangedEnemy>(x, y, enemyBullets));
+            }
+        }
+    }
+}

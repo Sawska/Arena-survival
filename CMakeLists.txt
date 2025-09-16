@@ -17,6 +17,11 @@ add_executable(GameEngine
     renderEnemy.cpp
     enemy.cpp
     spawner.cpp
+    bullet.cpp
+    renderBullet.cpp
+    fast_enemy.cpp
+    tank_enemy.cpp
+    ranged_enemy.cpp
 )
 
 

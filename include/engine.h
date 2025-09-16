@@ -7,7 +7,9 @@
 #include "logic/enemy.h"
 #include "render/renderEnemy.h"
 #include "logic/spawner.h"
-
+#include "logic/bullet.h"
+#include "logic/renderBullet.h"
+#include "logic/camera.h"
 
 
 #include <vector>
@@ -19,6 +21,9 @@ enum class GameState {
 };
 
 
+
+
+
 class Engine {
     SDL_Window* window;
     SDL_Renderer* renderer;
@@ -27,9 +32,18 @@ class Engine {
     Player player;
     RenderPlayer renderPlayer;
 
-    std::vector<Enemy> enemies;   
+    std::vector<std::unique_ptr<Enemy>> enemies;   
      Spawner spawner;             
-    RenderEnemy renderEnemy;      
+    RenderEnemy renderEnemy;
+    
+    std::vector<Bullet> bullets;
+    RenderBullet renderBullet;
+
+    std::vector<Bullet> enemyBullets;
+
+    Uint32 elapsedTime = 0;
+
+    void updateCamera();
 
 public:
     Engine();
@@ -43,6 +57,9 @@ public:
     void run();
     void renderGameOver();
      GameState state; 
+    Camera camera;
+    int worldWidth = 1600;
+    int worldHeight = 1200;
 };
 
 
