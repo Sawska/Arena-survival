@@ -10,7 +10,7 @@ class RenderPlayer {
     Player* player;
 public:
     RenderPlayer(Player* p);
-    void draw(const Player& player, SDL_Renderer* renderer, const Camera& cam);
+    void draw(const Player& player, SDL_Renderer* renderer, const Camera& cam, int worldWidth, int worldHeight);
 };
 
 #endif

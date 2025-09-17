@@ -3,11 +3,19 @@ project(GameEngine)
 
 set(CMAKE_CXX_STANDARD 17)
 
+# Use pkg-config to find SDL2 and SDL2_ttf
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(SDL2 REQUIRED sdl2)
+pkg_check_modules(SDL2_TTF REQUIRED SDL2_ttf)
 
-link_directories(${SDL2_LIBRARY_DIRS})
+# Include directories
+include_directories(
+    ${SDL2_INCLUDE_DIRS}
+    ${SDL2_TTF_INCLUDE_DIRS}
+    ${CMAKE_SOURCE_DIR}/include
+)
 
+# Executable
 add_executable(GameEngine
     main.cpp
     engine.cpp
@@ -22,12 +30,14 @@ add_executable(GameEngine
     fast_enemy.cpp
     tank_enemy.cpp
     ranged_enemy.cpp
+    renderObstacle.cpp
+    Obstacle.cpp
+    obstacleSpawner.cpp
+    button.cpp
 )
 
-
-target_include_directories(GameEngine PRIVATE
-    ${SDL2_INCLUDE_DIRS}
-    ${CMAKE_SOURCE_DIR}/include
+# Link libraries
+target_link_libraries(GameEngine
+    ${SDL2_LIBRARIES}
+    ${SDL2_TTF_LIBRARIES}
 )
-
-target_link_libraries(GameEngine ${SDL2_LIBRARIES})

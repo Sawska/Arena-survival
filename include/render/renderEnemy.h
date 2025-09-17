@@ -10,7 +10,7 @@ public:
     RenderEnemy() = default; 
     
 
-void draw(const Enemy& enemy, SDL_Renderer* renderer, const Camera& cam);
+void draw(const Enemy& enemy, SDL_Renderer* renderer, const Camera& cam, int worldWidth, int worldHeight);
 };
 
 #endif

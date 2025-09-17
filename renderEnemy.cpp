@@ -3,11 +3,13 @@
 #include "logic/tank_enemy.h"
 #include "logic/ranged_enemy.h"
 
-void RenderEnemy::draw(const Enemy& enemy, SDL_Renderer* renderer, const Camera& cam) {
+void RenderEnemy::draw(const Enemy& enemy, SDL_Renderer* renderer, const Camera& cam, int worldWidth, int worldHeight) {
     if (!enemy.alive) return;
 
-    SDL_Rect rect { enemy.x - cam.x, enemy.y - cam.y, enemy.width, enemy.height };
+    int ex = (enemy.x - cam.x + worldWidth) % worldWidth;
+    int ey = (enemy.y - cam.y + worldHeight) % worldHeight;
 
+    SDL_Rect rect{ ex, ey, enemy.width, enemy.height };
 
     if (dynamic_cast<const FastEnemy*>(&enemy))
         SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
@@ -19,4 +21,13 @@ void RenderEnemy::draw(const Enemy& enemy, SDL_Renderer* renderer, const Camera&
         SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
 
     SDL_RenderFillRect(renderer, &rect);
+
+    if (ex + enemy.width > worldWidth) {
+        rect.x = ex - worldWidth;
+        SDL_RenderFillRect(renderer, &rect);
+    }
+    if (ey + enemy.height > worldHeight) {
+        rect.y = ey - worldHeight;
+        SDL_RenderFillRect(renderer, &rect);
+    }
 }

@@ -2,6 +2,9 @@
 #define PLAYER_H
 
 #include "logic/bullet.h"
+#include "playerSkills.h"
+#include <vector>
+#include <ctime>
 
 class Player {
 public:
@@ -16,9 +19,24 @@ public:
     int level = 1;
     int exp = 0;
 
+     float bulletSpeed = 8.0f;
+    int bulletDamage = 10;
+    int moveSpeed = 5;
+    int bulletSize = 5;
+
+
+    int extraShots = 0;           
+    bool shotgun = false;          
+    bool diagonalShots = false;    
+    float fireRateModifier = 1.0f; 
+
+    std::vector<PlayerSkill> unlockedSkills;
+
     Player(int startX = 100, int startY = 100);
 
-    void move(int dx, int dy);
+
+    void move(int dx, int dy,int worldWidth, int worldHeight);
+
     void takeDamage(int damage);
     void addScore(int points);
 
@@ -30,6 +48,10 @@ public:
     int expToNextLevel() const;
 
     bool checkCollision(Bullet& bullet);
+
+    void applySkill(const PlayerSkill& skill);
+
+    std::vector<PlayerSkill> getRandomSkillChoices();
     
     
 };
