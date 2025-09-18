@@ -1,5 +1,6 @@
 #include "include/logic/player.h"
 #include <iostream>
+#include <cmath>
 
 Player::Player(int startX, int startY)
     : x(startX), y(startY), hp(100), score(0) {}
@@ -136,4 +137,42 @@ std::vector<PlayerSkill> Player::getRandomSkillChoices() {
         if(!already) choices.push_back(allSkills[idx]);
     }
     return choices;
+}
+
+std::vector<Bullet> Player::shoot(int targetX, int targetY) {
+    std::vector<Bullet> shots;
+
+    float dx = targetX - x;
+    float dy = targetY - y;
+
+    float length = sqrt(dx*dx + dy*dy);
+    if (length == 0) return shots;
+
+    float vx = dx / length * bulletSpeed;
+    float vy = dy / length * bulletSpeed;
+
+    shots.emplace_back(x, y, vx, vy, bulletDamage, bulletSize,false);
+
+
+    if (diagonalShots) {
+        shots.emplace_back(x, y, vx, -vy, bulletDamage, bulletSize,false); 
+        shots.emplace_back(x, y, -vx, vy, bulletDamage, bulletSize,false);
+    }
+
+    if (shotgun) {
+        float spread = 0.3f; 
+        float cosA = cos(spread), sinA = sin(spread);
+
+  
+        float vx1 = vx * cosA - vy * sinA;
+        float vy1 = vx * sinA + vy * cosA;
+
+        float vx2 = vx * cosA + vy * sinA;
+        float vy2 = -vx * sinA + vy * cosA;
+
+        shots.emplace_back(x, y, vx1, vy1, bulletDamage, bulletSize,false);
+        shots.emplace_back(x, y, vx2, vy2, bulletDamage, bulletSize,false);
+    }
+
+    return shots;
 }

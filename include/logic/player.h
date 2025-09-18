@@ -49,6 +49,9 @@ public:
 
     bool checkCollision(Bullet& bullet);
 
+    
+std::vector<Bullet> shoot(int targetX, int targetY);
+
     void applySkill(const PlayerSkill& skill);
 
     std::vector<PlayerSkill> getRandomSkillChoices();

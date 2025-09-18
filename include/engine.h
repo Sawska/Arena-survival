@@ -25,7 +25,8 @@ enum class GameState {
     MENU,
     RUNNING,
     GAME_OVER,
-    LEVEL_UP
+    LEVEL_UP,
+    PAUSE
 };
 
 
@@ -67,6 +68,9 @@ class Engine {
     std::vector<Button> menuButtons;
     std::vector<Button> gameOverButtons;
 
+    std::vector<Button> pauseButtons;
+
+
     std::vector<PlayerSkill> currentChoices;
     
         void triggerLevelUp();
@@ -86,6 +90,8 @@ public:
     void run();
     void renderGameOver();
     void renderMenu();
+    void renderHUD();
+    void renderPauseMenu();
      GameState state; 
     Camera camera;
     int worldWidth = 1600;

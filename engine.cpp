@@ -36,6 +36,7 @@ bool Engine::init() {
         return false;
     }
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
     if (!renderer) {
         std::cout << "Renderer Error: " << SDL_GetError() << std::endl;
         return false;
@@ -55,6 +56,10 @@ bool Engine::init() {
 
     gameOverButtons.push_back(Button(300, 200, 200, 50, "Retry", {0,255,0}, {50,255,50}, font));
     gameOverButtons.push_back(Button(300, 300, 200, 50, "Exit", {255,0,0}, {255,50,50}, font));
+
+    pauseButtons.push_back(Button(300, 200, 200, 50, "Resume", {0,255,0}, {50,255,50}, font));
+    pauseButtons.push_back(Button(300, 300, 200, 50, "Exit", {255,0,0}, {255,50,50}, font));
+
 
 
     running = true;
@@ -98,24 +103,31 @@ void Engine::handleEvents() {
                 }
             } 
             else if (state == GameState::RUNNING) {
-                int worldMouseX = mouseX + camera.x;
-                int worldMouseY = mouseY + camera.y;
+               int worldMouseX = mouseX + camera.x;
+    int worldMouseY = mouseY + camera.y;
 
-                float dx = worldMouseX - player.x;
-                float dy = worldMouseY - player.y;
-
-                float length = sqrt(dx*dx + dy*dy);
-                float speed = 8.0f;
-
-                if (length != 0) {
-                    float vx = dx / length * speed;
-                    float vy = dy / length * speed;
-                    bullets.push_back(Bullet(player.x, player.y, vx, vy, 10));
-                }
+    auto newBullets = player.shoot(worldMouseX, worldMouseY);
+    bullets.insert(bullets.end(), newBullets.begin(), newBullets.end());
             } else if(state == GameState::LEVEL_UP) {
                 handleLevelUpEvent(event);
+            } else if(state == GameState::PAUSE) {
+                for (auto& btn : pauseButtons) {
+                    if (btn.isHovered(mouseX, mouseY)) {
+                        if (btn.getText() == "Resume") {
+                            state = GameState::RUNNING;
+                        } else if (btn.getText() == "Exit") {
+                            running = false;
+                        }
+                    }
+                }
             }
         }
+    }
+
+    const Uint8* keystate = SDL_GetKeyboardState(NULL);
+    if (keystate[SDL_SCANCODE_ESCAPE]) {
+
+         if (state == GameState::PAUSE) state = GameState::RUNNING;
     }
 
     if (state == GameState::RUNNING) {
@@ -144,7 +156,9 @@ void Engine::handleEvents() {
             }
         }
 
-        if (keystate[SDL_SCANCODE_ESCAPE]) running = false;
+        if (keystate[SDL_SCANCODE_ESCAPE]) {
+            state = GameState::PAUSE;
+        }
     }
 }
 
@@ -260,6 +274,14 @@ void Engine::render() {
         return; 
     }
 
+    
+        renderHUD();
+
+    if(state == GameState::PAUSE) {
+        renderPauseMenu();
+        return;
+    }
+
 
     SDL_RenderPresent(renderer);
 }
@@ -284,7 +306,10 @@ void Engine::run() {
         Uint32 delta = currentTime - lastTime;
         lastTime = currentTime;
 
-        elapsedTime += delta; 
+        if(state == GameState::RUNNING) {
+                elapsedTime += delta; 
+        }
+
         
 
         switch (state) {
@@ -300,6 +325,8 @@ void Engine::run() {
                 break;
             case GameState::LEVEL_UP:
             render();
+            case GameState::PAUSE:
+                render();
                 break;
         }
 
@@ -413,7 +440,6 @@ void Engine::triggerLevelUp() {
 void Engine::renderLevelUpScreen() {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 180);  
     SDL_Rect overlay = {0, 0, 800, 600};
-
     SDL_RenderFillRect(renderer, &overlay);
 
     SDL_Color white = {255, 255, 255, 255};
@@ -465,4 +491,106 @@ void Engine::handleLevelUpEvent(SDL_Event& e) {
             y += 100;
         }
     }
+}
+
+void Engine::renderHUD() {
+    SDL_Color white = {255, 255, 255, 255};
+
+    int hearts = player.hp / 20; 
+    std::string hpText = "HP: ";
+    for (int i = 0; i < hearts; i++) {
+        hpText += "@ "; 
+    }
+
+    int seconds = static_cast<int>(elapsedTime / 1000.0f);
+    std::string timeText = "Time: " + std::to_string(seconds) + "s";
+    std::string scoreText = "Score: " + std::to_string(player.score);
+
+    int yOffset = 20;
+
+    auto renderText = [&](const std::string& text, int y) {
+        SDL_Surface* surf = TTF_RenderText_Solid(font, text.c_str(), white);
+        if (!surf) {
+            std::cerr << "TTF_RenderText_Solid failed: " << TTF_GetError() << std::endl;
+            return;
+        }
+
+        SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surf);
+        if (!tex) {
+            std::cerr << "SDL_CreateTextureFromSurface failed: " << SDL_GetError() << std::endl;
+            SDL_FreeSurface(surf);
+            return;
+        }
+
+        int screenW, screenH;
+        SDL_GetRendererOutputSize(renderer, &screenW, &screenH);
+
+        SDL_Rect dst;
+        dst.w = surf->w;
+        dst.h = surf->h;
+        dst.x = screenW - dst.w - 20; 
+        dst.y = y;
+
+        SDL_RenderCopy(renderer, tex, nullptr, &dst);
+
+        SDL_FreeSurface(surf);
+        SDL_DestroyTexture(tex);
+    };
+
+    renderText(hpText, yOffset);
+    renderText(timeText, yOffset + 30);
+    renderText(scoreText, yOffset + 60);
+}
+
+
+void Engine::renderPauseMenu() {
+    SDL_Color white = {255, 255, 255, 255};
+
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 180);
+    SDL_Rect overlay = {0, 0, 800, 600};
+    SDL_RenderFillRect(renderer, &overlay);
+
+    if (font) {
+        SDL_Surface* surf = TTF_RenderText_Solid(font, "Paused", white);
+        SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surf);
+        SDL_Rect dst = {250, 50, surf->w, surf->h};
+        SDL_RenderCopy(renderer, tex, nullptr, &dst);
+        SDL_FreeSurface(surf);
+        SDL_DestroyTexture(tex);
+
+        // Draw info text below
+        int seconds = static_cast<int>(elapsedTime / 1000);
+        std::string infoText = "Level: " + std::to_string(player.level) +
+                               " | Score: " + std::to_string(player.score) +
+                               " | Time: " + std::to_string(seconds) + "s";
+
+        SDL_Surface* surf2 = TTF_RenderText_Solid(font, infoText.c_str(), white);
+        SDL_Texture* tex2 = SDL_CreateTextureFromSurface(renderer, surf2);
+        SDL_Rect dst2 = {150, 120, surf2->w, surf2->h};
+        SDL_RenderCopy(renderer, tex2, nullptr, &dst2);
+        SDL_FreeSurface(surf2);
+        SDL_DestroyTexture(tex2);
+    }
+
+    int y = 200;
+    for (auto& btn : pauseButtons) {
+        SDL_Rect box = {150, y, 500, 80};
+        SDL_SetRenderDrawColor(renderer, 50, 50, 100, 255);
+        SDL_RenderFillRect(renderer, &box);
+
+        if (font) {
+            SDL_Surface* surf = TTF_RenderText_Solid(font, btn.getText().c_str(), white);
+            SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surf);
+            SDL_Rect dst = {box.x + 20, box.y + 20, surf->w, surf->h};
+            SDL_RenderCopy(renderer, tex, nullptr, &dst);
+            SDL_FreeSurface(surf);
+            SDL_DestroyTexture(tex);
+        }
+
+
+        y += 100;
+    }
+
+    SDL_RenderPresent(renderer);
 }
