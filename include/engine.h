@@ -16,6 +16,9 @@
 #include <vector>
 #include "logic/obstacleSpawner.h"
 #include "render/button.h"
+#include <SDL2/SDL_mixer.h>
+#include <map>
+
 
 
 
@@ -54,11 +57,17 @@ class Engine {
     RenderObstacle renderObstacle;
     ObstacleSpawner obstacleSpawner;
 
+    bool escapePressedLastFrame = false;
+
+
 
     Uint32 elapsedTime = 0;
     Uint32 finalElapsedTime = 0;
 
     int lastPlayerLevel = 1;
+
+    std::map<std::string, Mix_Music*> musicTracks;
+    std::map<std::string, Mix_Chunk*> soundEffects;
     
 
 
@@ -72,6 +81,10 @@ class Engine {
 
 
     std::vector<PlayerSkill> currentChoices;
+
+    int musicVolume = MIX_MAX_VOLUME;  
+int soundVolume = MIX_MAX_VOLUME;  
+
     
         void triggerLevelUp();
     void renderLevelUpScreen();
@@ -92,6 +105,10 @@ public:
     void renderMenu();
     void renderHUD();
     void renderPauseMenu();
+    void loadAudio();
+    void playMusic(const std::string& id, int loops = -1);
+    void playSound(const std::string& id, int loops = 0);
+    void cleanupAudio();
      GameState state; 
     Camera camera;
     int worldWidth = 1600;

@@ -5,9 +5,10 @@
 Player::Player(int startX, int startY)
     : x(startX), y(startY), hp(100), score(0) {}
 
-void Player::move(int dx, int dy,int worldWidth, int worldHeight) {
-    x += dx;
-    y += dy;
+
+void Player::move(int dx, int dy, int worldWidth, int worldHeight) {
+    x += static_cast<int>(dx * moveSpeed);
+    y += static_cast<int>(dy * moveSpeed);
 
     if (x < 0) x += worldWidth;
     if (x >= worldWidth) x -= worldWidth;
@@ -36,30 +37,23 @@ bool Player::isDead()
 {
     return !isAlive;
 }
+
+
 void Player::addExp(int amount) {
     exp += amount;
-
-    while (true) {
-        
-        int nextLevelExp = expToNextLevel();  
-        
-        if (exp >= nextLevelExp) {
-            exp -= nextLevelExp;
-            level++;            
-            std::cout << "Level Up! New level: " << level << std::endl;
-        } else {
-            break; 
-        }
+    while (exp >= expToNextLevel(level)) { 
+        exp -= expToNextLevel(level);
+        level++;
+        std::cout << "Level Up! New level: " << level << std::endl;
     }
 }
 
-
-
-int Player::expToNextLevel() const {
+int Player::expToNextLevel(int currentLevel) const {
     int base = 100;
     double growth = 1.5;
-    return static_cast<int>(base * level * growth);
+    return static_cast<int>(base * currentLevel * growth);
 }
+
 
 
 bool Player::checkCollision(Bullet& bullet) {
@@ -128,30 +122,42 @@ std::vector<PlayerSkill> Player::getRandomSkillChoices() {
         {PlayerSkillType::SMALLER_BODY, "Small Frame", "Reduce player size"}
     };
 
+    std::vector<PlayerSkill> availableSkills;
+    for (auto& skill : allSkills) {
+        bool unlocked = false;
+        for (auto& s : unlockedSkills) if (s.type == skill.type) unlocked = true;
+        if (!unlocked) availableSkills.push_back(skill);
+    }
+
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
     std::vector<PlayerSkill> choices;
-    while(choices.size() < 3) {
-        int idx = rand() % allSkills.size();
-        bool already = false;
-        for(const auto& c : choices) if(c.type == allSkills[idx].type) already = true;
-        if(!already) choices.push_back(allSkills[idx]);
+    while (choices.size() < 3 && !availableSkills.empty()) {
+        int idx = rand() % availableSkills.size();
+        choices.push_back(availableSkills[idx]);
+        availableSkills.erase(availableSkills.begin() + idx); 
     }
     return choices;
 }
+
 
 std::vector<Bullet> Player::shoot(int targetX, int targetY) {
     std::vector<Bullet> shots;
 
     float dx = targetX - x;
     float dy = targetY - y;
-
     float length = sqrt(dx*dx + dy*dy);
     if (length == 0) return shots;
 
     float vx = dx / length * bulletSpeed;
     float vy = dy / length * bulletSpeed;
 
+
     shots.emplace_back(x, y, vx, vy, bulletDamage, bulletSize,false);
+
+
+    for (int i = 0; i < extraShots; ++i) {
+        shots.emplace_back(x, y, vx, vy, bulletDamage, bulletSize,false);
+    }
 
 
     if (diagonalShots) {
@@ -163,7 +169,6 @@ std::vector<Bullet> Player::shoot(int targetX, int targetY) {
         float spread = 0.3f; 
         float cosA = cos(spread), sinA = sin(spread);
 
-  
         float vx1 = vx * cosA - vy * sinA;
         float vy1 = vx * sinA + vy * cosA;
 
@@ -176,3 +181,4 @@ std::vector<Bullet> Player::shoot(int targetX, int targetY) {
 
     return shots;
 }
+

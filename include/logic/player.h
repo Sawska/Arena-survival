@@ -21,7 +21,7 @@ public:
 
      float bulletSpeed = 8.0f;
     int bulletDamage = 10;
-    int moveSpeed = 5;
+    int moveSpeed = 1;
     int bulletSize = 5;
 
 
@@ -34,8 +34,7 @@ public:
 
     Player(int startX = 100, int startY = 100);
 
-
-    void move(int dx, int dy,int worldWidth, int worldHeight);
+void move(int dx, int dy, int worldWidth, int worldHeight);
 
     void takeDamage(int damage);
     void addScore(int points);
@@ -45,7 +44,8 @@ public:
     void addExp(int amount);
 
     
-    int expToNextLevel() const;
+
+    int expToNextLevel(int currentLevel) const;
 
     bool checkCollision(Bullet& bullet);
 

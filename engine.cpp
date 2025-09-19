@@ -27,6 +27,13 @@ bool Engine::init() {
         return false;
     }
 
+if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
+    std::cout << "SDL_mixer could not initialize! Error: "
+              << Mix_GetError() << std::endl;
+    return false;
+}
+
+
     window = SDL_CreateWindow("Game Engine",
                               SDL_WINDOWPOS_CENTERED,
                               SDL_WINDOWPOS_CENTERED,
@@ -68,77 +75,126 @@ bool Engine::init() {
 void Engine::handleEvents() {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
-        if (event.type == SDL_QUIT) running = false;
+        if (event.type == SDL_QUIT) {
+            running = false;
+            return;
+        }
+
+        int mouseX = 0, mouseY = 0;
+        bool mousePressed = false;
 
         if (event.type == SDL_MOUSEBUTTONDOWN) {
-            int mouseX, mouseY;
-            SDL_GetMouseState(&mouseX, &mouseY);
-
-            if (state == GameState::MENU) {
-                for (auto& btn : menuButtons) {
-                    if (btn.isHovered(mouseX, mouseY)) {
-                        if (btn.getText() == "Start") {
-                            state = GameState::RUNNING;
-                        } else if (btn.getText() == "Exit") {
-                            running = false;
-                        }
-                    }
-                }
-            } 
-            else if (state == GameState::GAME_OVER) {
-                for (auto& btn : gameOverButtons) {
-                    if (btn.isHovered(mouseX, mouseY)) {
-                        if (btn.getText() == "Retry") {
-                            player = Player(100, 100);
-                            enemies.clear();
-                            bullets.clear();
-                            enemyBullets.clear();
-                            obstacles = obstacleSpawner.spawnRandomObstacles(10, worldWidth, worldHeight, 20, 60);
-                            elapsedTime = 0;
-                            state = GameState::RUNNING;
-                        } else if (btn.getText() == "Exit") {
-                            running = false;
-                        }
-                    }
-                }
-            } 
-            else if (state == GameState::RUNNING) {
-               int worldMouseX = mouseX + camera.x;
-    int worldMouseY = mouseY + camera.y;
-
-    auto newBullets = player.shoot(worldMouseX, worldMouseY);
-    bullets.insert(bullets.end(), newBullets.begin(), newBullets.end());
-            } else if(state == GameState::LEVEL_UP) {
-                handleLevelUpEvent(event);
-            } else if(state == GameState::PAUSE) {
-                for (auto& btn : pauseButtons) {
-                    if (btn.isHovered(mouseX, mouseY)) {
-                        if (btn.getText() == "Resume") {
-                            state = GameState::RUNNING;
-                        } else if (btn.getText() == "Exit") {
-                            running = false;
-                        }
-                    }
-                }
-            }
+            mouseX = event.button.x;
+            mouseY = event.button.y;
+            mousePressed = true;
+        } else if (event.type == SDL_MOUSEMOTION && (event.motion.state & SDL_BUTTON_LMASK)) {
+            mouseX = event.motion.x;
+            mouseY = event.motion.y;
+            mousePressed = true;
         }
-    }
 
-    const Uint8* keystate = SDL_GetKeyboardState(NULL);
-    if (keystate[SDL_SCANCODE_ESCAPE]) {
+        switch (state) {
+            case GameState::MENU:
+                if (mousePressed) {
+                    for (auto& btn : menuButtons) {
+                        if (btn.isHovered(mouseX, mouseY)) {
+                            if (btn.getText() == "Start") state = GameState::RUNNING;
+                            else if (btn.getText() == "Exit") running = false;
+                        }
+                    }
+                }
+                break;
 
-         if (state == GameState::PAUSE) state = GameState::RUNNING;
+            case GameState::GAME_OVER:
+                if (mousePressed) {
+                    for (auto& btn : gameOverButtons) {
+                        if (btn.isHovered(mouseX, mouseY)) {
+                            if (btn.getText() == "Retry") {
+                                player = Player(100, 100);
+                                enemies.clear();
+                                bullets.clear();
+                                enemyBullets.clear();
+                                obstacles = obstacleSpawner.spawnRandomObstacles(10, worldWidth, worldHeight, 20, 60);
+                                elapsedTime = 0;
+                                state = GameState::RUNNING;
+                            } else if (btn.getText() == "Exit") {
+                                running = false;
+                            }
+                        }
+                    }
+                }
+                break;
+
+            case GameState::RUNNING:
+                if (mousePressed && event.type == SDL_MOUSEBUTTONDOWN) {
+                    int worldMouseX = mouseX + camera.x;
+                    int worldMouseY = mouseY + camera.y;
+                    auto newBullets = player.shoot(worldMouseX, worldMouseY);
+                    if (!newBullets.empty()) playSound("shoot", 0);
+                    bullets.insert(bullets.end(), newBullets.begin(), newBullets.end());
+                }
+                break;
+
+            case GameState::LEVEL_UP:
+                handleLevelUpEvent(event);
+                break;
+
+            case GameState::PAUSE:
+                if (mousePressed) {
+                    if (mouseY >= 400 && mouseY <= 420 && mouseX >= 150 && mouseX <= 650) {
+                        musicVolume = ((mouseX - 150) * MIX_MAX_VOLUME) / 500;
+                        if (musicVolume < 0) musicVolume = 0;
+                        if (musicVolume > MIX_MAX_VOLUME) musicVolume = MIX_MAX_VOLUME;
+                        Mix_VolumeMusic(musicVolume);
+                    }
+
+                    if (mouseY >= 480 && mouseY <= 500 && mouseX >= 150 && mouseX <= 650) {
+                        soundVolume = ((mouseX - 150) * MIX_MAX_VOLUME) / 500;
+                        if (soundVolume < 0) soundVolume = 0;
+                        if (soundVolume > MIX_MAX_VOLUME) soundVolume = MIX_MAX_VOLUME;
+                    
+                        for (auto& [name, chunk] : soundEffects) {
+                            if (chunk) Mix_VolumeChunk(chunk, soundVolume);
+                        }
+
+                    }
+
+  
+                    if (event.type == SDL_MOUSEBUTTONDOWN) {
+                        for (auto& btn : pauseButtons) {
+                            if (btn.isHovered(mouseX, mouseY)) {
+                                if (btn.getText() == "Resume") state = GameState::RUNNING;
+                                else if (btn.getText() == "Exit") running = false;
+                            }
+                        }
+                    }
+                }
+                break;
+        } 
+    } 
+
+
+
+const Uint8* keystate = SDL_GetKeyboardState(NULL);
+if (keystate[SDL_SCANCODE_ESCAPE]) {
+    if (!escapePressedLastFrame) {
+        if (state == GameState::RUNNING) state = GameState::PAUSE;
+        else if (state == GameState::PAUSE) state = GameState::RUNNING;
     }
+    escapePressedLastFrame = true;
+} else {
+    escapePressedLastFrame = false; 
+}
+
+
+
 
     if (state == GameState::RUNNING) {
         int oldX = player.x;
         int oldY = player.y;
 
-        const Uint8* keystate = SDL_GetKeyboardState(NULL);
-
         if (keystate[SDL_SCANCODE_A]) player.move(-5, 0, worldWidth, worldHeight);
         if (keystate[SDL_SCANCODE_D]) player.move(5, 0, worldWidth, worldHeight);
-
         for (const auto& obstacle : obstacles) {
             if (obstacle.collidesWith(player.x, player.y, player.width, player.height)) {
                 player.x = oldX;
@@ -148,16 +204,11 @@ void Engine::handleEvents() {
 
         if (keystate[SDL_SCANCODE_W]) player.move(0, -5, worldWidth, worldHeight);
         if (keystate[SDL_SCANCODE_S]) player.move(0, 5, worldWidth, worldHeight);
-
         for (const auto& obstacle : obstacles) {
             if (obstacle.collidesWith(player.x, player.y, player.width, player.height)) {
                 player.y = oldY;
                 break;
             }
-        }
-
-        if (keystate[SDL_SCANCODE_ESCAPE]) {
-            state = GameState::PAUSE;
         }
     }
 }
@@ -174,6 +225,7 @@ void Engine::update() {
     for (auto& enemy : enemies) {
         enemy->moveTowards(player.x, player.y);
         if (enemy->hitPlayer(player)) {
+            playSound("hit", 0);
             player.takeDamage(enemy->damage);
             std::cout << "Player hit! HP: " << player.hp << std::endl;
         }
@@ -225,6 +277,7 @@ for (auto& b : enemyBullets) {
     for (auto it = enemies.begin(); it != enemies.end(); ) {
         if (!(*it)->alive) {
             player.addScore(10);
+            playSound("enemy_death", 0);
             std::cout << "Enemy defeated! Score: " << player.score << std::endl;
             it = enemies.erase(it);
         } else {
@@ -314,21 +367,28 @@ void Engine::run() {
 
         switch (state) {
             case GameState::MENU:
+                playMusic("menu", -1);
                 renderMenu();  
                 break;
             case GameState::RUNNING:
+                playMusic("background", -1);
                 update();
                 render();
                 break;
             case GameState::GAME_OVER:
+                playMusic("game_over_music", -1);
+                playSound("game_over", 0);
                 renderGameOver();
                 break;
             case GameState::LEVEL_UP:
+            playSound("level_up", 0);
             render();
             case GameState::PAUSE:
                 render();
                 break;
         }
+
+        cleanupAudio();
 
         SDL_Delay(16);
     }
@@ -559,7 +619,6 @@ void Engine::renderPauseMenu() {
         SDL_FreeSurface(surf);
         SDL_DestroyTexture(tex);
 
-        // Draw info text below
         int seconds = static_cast<int>(elapsedTime / 1000);
         std::string infoText = "Level: " + std::to_string(player.level) +
                                " | Score: " + std::to_string(player.score) +
@@ -592,5 +651,142 @@ void Engine::renderPauseMenu() {
         y += 100;
     }
 
+
+SDL_Rect musicBar = {150, 400, 500, 20};   
+SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
+SDL_RenderFillRect(renderer, &musicBar);
+
+
+int musicFillWidth = (musicVolume * musicBar.w) / MIX_MAX_VOLUME;
+SDL_Rect musicFill = {musicBar.x, musicBar.y, musicFillWidth, musicBar.h};
+SDL_SetRenderDrawColor(renderer, 0, 150, 255, 255);
+SDL_RenderFillRect(renderer, &musicFill);
+
+SDL_Surface* surfMusic = TTF_RenderText_Solid(font, "Music Volume", white);
+SDL_Texture* texMusic = SDL_CreateTextureFromSurface(renderer, surfMusic);
+SDL_Rect dstMusic = {musicBar.x, musicBar.y - 30, surfMusic->w, surfMusic->h};
+SDL_RenderCopy(renderer, texMusic, nullptr, &dstMusic);
+SDL_FreeSurface(surfMusic);
+SDL_DestroyTexture(texMusic);
+
+SDL_Rect soundBar = {150, 480, 500, 20};
+SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
+SDL_RenderFillRect(renderer, &soundBar);
+
+int soundFillWidth = (soundVolume * soundBar.w) / MIX_MAX_VOLUME;
+SDL_Rect soundFill = {soundBar.x, soundBar.y, soundFillWidth, soundBar.h};
+SDL_SetRenderDrawColor(renderer, 0, 255, 100, 255);
+SDL_RenderFillRect(renderer, &soundFill);
+
+SDL_Surface* surfSound = TTF_RenderText_Solid(font, "Sound Volume", white);
+SDL_Texture* texSound = SDL_CreateTextureFromSurface(renderer, surfSound);
+SDL_Rect dstSound = {soundBar.x, soundBar.y - 30, surfSound->w, surfSound->h};
+SDL_RenderCopy(renderer, texSound, nullptr, &dstSound);
+SDL_FreeSurface(surfSound);
+SDL_DestroyTexture(texSound);
+
+
     SDL_RenderPresent(renderer);
+}
+
+
+void Engine::loadAudio() {
+    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
+        std::cerr << "SDL_mixer could not initialize! SDL_mixer Error: "
+                  << Mix_GetError() << std::endl;
+        return;
+    }
+
+    Mix_Music* bgMusic = Mix_LoadMUS("assets/audio/background_music.mp3");
+    if (!bgMusic) {
+        std::cerr << "Failed to load background music! Error: "
+                  << Mix_GetError() << std::endl;
+    } else {
+        musicTracks["background"] = bgMusic;
+    }
+
+    Mix_Music* menuMusic = Mix_LoadMUS("assets/audio/menu_music.mp3");
+    if (!menuMusic) {
+        std::cerr << "Failed to load menu music! Error: "
+                  << Mix_GetError() << std::endl;
+    } else {
+        musicTracks["menu"] = menuMusic;
+    }
+
+    Mix_Music* gameOverMusic = Mix_LoadMUS("assets/audio/game_over_music.mp3");
+    if (!gameOverMusic) {
+        std::cerr << "Failed to load game over music! Error: "
+                  << Mix_GetError() << std::endl;
+    } else {
+        musicTracks["game_over_music"] = gameOverMusic;
+    }
+
+    Mix_Chunk* shoot = Mix_LoadWAV("assets/audio/shoot.wav");
+    if (!shoot) {
+        std::cerr << "Failed to load shoot sound! Error: "
+                  << Mix_GetError() << std::endl;
+    } else {
+        soundEffects["shoot"] = shoot;
+    }
+
+    Mix_Chunk* hit = Mix_LoadWAV("assets/audio/hit.wav");
+    if (!hit) {
+        std::cerr << "Failed to load hit sound! Error: "
+                  << Mix_GetError() << std::endl;
+    } else {
+        soundEffects["hit"] = hit;
+    }
+
+    Mix_Chunk* enemyDeath = Mix_LoadWAV("assets/audio/enemy_death.wav");
+    if (!enemyDeath) {
+        std::cerr << "Failed to load enemy death sound! Error: "
+                  << Mix_GetError() << std::endl;
+    } else {
+        soundEffects["enemy_death"] = enemyDeath;
+    }
+
+    Mix_Chunk* gameOverSound = Mix_LoadWAV("assets/audio/game_over.wav");
+    if (!gameOverSound) {
+        std::cerr << "Failed to load game over sound! Error: "
+                  << Mix_GetError() << std::endl;
+    } else {
+        soundEffects["game_over"] = gameOverSound;
+    }
+
+    Mix_Chunk* levelUp = Mix_LoadWAV("assets/audio/level_up.wav");
+    if (!levelUp) {
+        std::cerr << "Failed to load level up sound! Error: "
+                  << Mix_GetError() << std::endl;
+    } else {
+        soundEffects["level_up"] = levelUp;
+    }
+}
+
+
+void Engine::playMusic(const std::string& id, int loops) {
+    auto it = musicTracks.find(id);
+    if (it != musicTracks.end()) {
+        Mix_PlayMusic(it->second, loops);
+    }
+}
+
+void Engine::playSound(const std::string& id, int loops) {
+    auto it = soundEffects.find(id);
+    if (it != soundEffects.end()) {
+        Mix_PlayChannel(-1, it->second, loops);
+    }
+}
+
+void Engine::cleanupAudio() {
+    for (auto& [id, mus] : musicTracks) {
+        Mix_FreeMusic(mus);
+    }
+    musicTracks.clear();
+
+    for (auto& [id, snd] : soundEffects) {
+        Mix_FreeChunk(snd);
+    }
+    soundEffects.clear();
+
+    Mix_CloseAudio();
 }
