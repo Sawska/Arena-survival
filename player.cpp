@@ -96,6 +96,14 @@ void Player::applySkill(const PlayerSkill& skill) {
         case PlayerSkillType::DIAGONAL_SHOTS:
             diagonalShots = true; 
             break;
+        case PlayerSkillType::LASER:
+            hasLaser = true;   
+            break;
+
+        case PlayerSkillType::GRENADE:
+            hasGrenade = true;
+            break;
+ 
         case PlayerSkillType::SMALLER_BODY:
             if (width > 20 && height > 20) {
                 width -= 5;
@@ -119,7 +127,10 @@ std::vector<PlayerSkill> Player::getRandomSkillChoices() {
         {PlayerSkillType::MULTIPLE_SHOTS, "Double Shot", "Fire extra bullet"},
         {PlayerSkillType::SHOTGUN_SHOTS, "Shotgun", "Fire bullets in spread"},
         {PlayerSkillType::DIAGONAL_SHOTS, "Diagonal Shots", "Adds diagonal bullets"},
-        {PlayerSkillType::SMALLER_BODY, "Small Frame", "Reduce player size"}
+        {PlayerSkillType::SMALLER_BODY, "Small Frame", "Reduce player size"},
+        {PlayerSkillType::LASER, "Laser Beam", "Shoot a piercing laser"},
+        {PlayerSkillType::GRENADE, "Grenade", "Launch an explosive grenade"}
+
     };
 
     std::vector<PlayerSkill> availableSkills;
@@ -152,17 +163,29 @@ std::vector<Bullet> Player::shoot(int targetX, int targetY) {
     float vy = dy / length * bulletSpeed;
 
 
-    shots.emplace_back(x, y, vx, vy, bulletDamage, bulletSize,false);
+    if (hasLaser) {
+        shots.emplace_back(x, y, vx * 9999, vy * 9999, bulletDamage * 2, bulletSize * 4, false, true,false);
+
+        return shots;
+    }
+
+    if (hasGrenade) {
+        shots.emplace_back(x, y, vx, vy, bulletDamage * 3, bulletSize * 2, false, false,true);
+        return shots;
+    }
+
+
+    shots.emplace_back(x, y, vx, vy, bulletDamage, bulletSize,false, false,false);
 
 
     for (int i = 0; i < extraShots; ++i) {
-        shots.emplace_back(x, y, vx, vy, bulletDamage, bulletSize,false);
+        shots.emplace_back(x, y, vx, vy, bulletDamage, bulletSize,false, false,false);
     }
 
 
     if (diagonalShots) {
-        shots.emplace_back(x, y, vx, -vy, bulletDamage, bulletSize,false); 
-        shots.emplace_back(x, y, -vx, vy, bulletDamage, bulletSize,false);
+        shots.emplace_back(x, y, vx, -vy, bulletDamage, bulletSize,false, false,false); 
+        shots.emplace_back(x, y, -vx, vy, bulletDamage, bulletSize,false, false,false);
     }
 
     if (shotgun) {
@@ -175,8 +198,8 @@ std::vector<Bullet> Player::shoot(int targetX, int targetY) {
         float vx2 = vx * cosA + vy * sinA;
         float vy2 = -vx * sinA + vy * cosA;
 
-        shots.emplace_back(x, y, vx1, vy1, bulletDamage, bulletSize,false);
-        shots.emplace_back(x, y, vx2, vy2, bulletDamage, bulletSize,false);
+        shots.emplace_back(x, y, vx1, vy1, bulletDamage, bulletSize,false, false,false);
+        shots.emplace_back(x, y, vx2, vy2, bulletDamage, bulletSize,false, false,false);
     }
 
     return shots;

@@ -13,7 +13,9 @@ enum class PlayerSkillType {
     MULTIPLE_SHOTS,
     SHOTGUN_SHOTS,
     DIAGONAL_SHOTS,
-    SMALLER_BODY
+    SMALLER_BODY,
+    LASER,      
+    GRENADE      
 };
 
 

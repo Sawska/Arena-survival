@@ -19,7 +19,7 @@ public:
     Spawner(std::vector<std::unique_ptr<Enemy>>& enemyList,
             std::vector<Bullet>* enemyBulletsVector,
             int interval = 120);
-    void update(Uint32 elapsedTime);
+   void update(Uint32 elapsedTime, int playerX, int playerY, int screenWidth, int screenHeight);
 };
 
 

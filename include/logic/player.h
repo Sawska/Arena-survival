@@ -27,7 +27,9 @@ public:
 
     int extraShots = 0;           
     bool shotgun = false;          
-    bool diagonalShots = false;    
+    bool diagonalShots = false;
+    bool hasLaser = false;    
+    bool hasGrenade = true;
     float fireRateModifier = 1.0f; 
 
     std::vector<PlayerSkill> unlockedSkills;

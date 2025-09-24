@@ -8,15 +8,18 @@ public:
     int damage;
     bool alive;
     bool isEnemy;
-    int width=5;
-    int height=5;
+    int width = 5;
+    int height = 5;
+
+    bool piercing = false; 
+    bool isGrenade = false; 
 
     Bullet(float startX, float startY, float velocityX, float velocityY,
-           int dmg = 10, int size = 5, bool enemyBullet = false);
+           int dmg = 10, int size = 5, bool enemyBullet = false,
+           bool piercingBullet = false, bool grenade = false);
+
     void update();
     void kill();
 };
-
-
 
 #endif // BULLET_H

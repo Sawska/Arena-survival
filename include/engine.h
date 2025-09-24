@@ -22,6 +22,12 @@
 
 
 
+struct ChunkCoord {
+    int cx, cy;
+    bool operator<(const ChunkCoord& other) const {
+        return std::tie(cx, cy) < std::tie(other.cx, other.cy);
+    }
+};
 
 
 enum class GameState {
@@ -44,6 +50,10 @@ class Engine {
     Player player;
     RenderPlayer renderPlayer;
 
+    ChunkCoord getCurrentChunk();
+
+    void updateWorld();
+
     std::vector<std::unique_ptr<Enemy>> enemies;   
      Spawner spawner;             
     RenderEnemy renderEnemy;
@@ -58,6 +68,8 @@ class Engine {
     ObstacleSpawner obstacleSpawner;
 
     bool escapePressedLastFrame = false;
+
+    std::map<ChunkCoord, std::vector<Obstacle>> loadedChunks;
 
 
 

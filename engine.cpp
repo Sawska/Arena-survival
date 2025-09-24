@@ -218,7 +218,7 @@ if (keystate[SDL_SCANCODE_ESCAPE]) {
 void Engine::update() {
     if(state != GameState::RUNNING) return;
 
-    spawner.update(elapsedTime);
+    spawner.update(elapsedTime, player.x, player.y, 800, 600);
 
     updateCamera();
 
@@ -231,17 +231,35 @@ void Engine::update() {
         }
     }
 
-    for (auto& bullet : bullets) {
-        bullet.update();
+for (auto& bullet : bullets) {
+    bullet.update();
 
-        for (auto& enemy : enemies) {
-            if (enemy->alive && enemy->hitByBullet(bullet)) {
-                enemy->takeDamage(bullet.damage);
+    for (auto& enemy : enemies) {
+        if (enemy->alive && enemy->hitByBullet(bullet)) {
+            enemy->takeDamage(bullet.damage);
+
+            if (bullet.isGrenade) {
+                float explosionRadius = 100.0f;
+                for (auto& aoeEnemy : enemies) {
+                    float dx = aoeEnemy->x - bullet.x;
+                    float dy = aoeEnemy->y - bullet.y;
+                    float dist2 = dx*dx + dy*dy;
+                    if (aoeEnemy->alive && dist2 < explosionRadius * explosionRadius) {
+                        aoeEnemy->takeDamage(bullet.damage / 2); 
+                    }
+                }
+                bullet.kill(); 
+                break; 
+            }
+            else if (!bullet.piercing) {
+
                 bullet.kill();
                 break;
             }
+
         }
     }
+}
 
 
 bullets.erase(
@@ -253,6 +271,7 @@ bullets.erase(
         }),
     bullets.end()
 );
+
     for (auto& b : enemyBullets) b.update();
 
 enemyBullets.erase(
