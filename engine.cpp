@@ -114,6 +114,9 @@ void Engine::handleEvents() {
                                 enemies.clear();
                                 bullets.clear();
                                 enemyBullets.clear();
+                                loadedChunks.clear();
+                                generatedChunks.clear();
+                                obstacles.clear();
                                 obstacles = obstacleSpawner.spawnRandomObstacles(10, worldWidth, worldHeight, 20, 60);
                                 elapsedTime = 0;
                                 state = GameState::RUNNING;
@@ -218,6 +221,24 @@ if (keystate[SDL_SCANCODE_ESCAPE]) {
 void Engine::update() {
     if(state != GameState::RUNNING) return;
 
+
+
+playerChunkX = player.x / chunkSize;
+playerChunkY = player.y / chunkSize;
+
+ChunkCoord currentChunk{playerChunkX, playerChunkY};
+
+
+if (generatedChunks.find(currentChunk) == generatedChunks.end()) {
+    generatedChunks[currentChunk] = obstacleSpawner.spawnRandomObstacles(10, chunkSize, chunkSize, 50, 150);
+
+    for (auto& obs : generatedChunks[currentChunk]) {
+        obs.x += playerChunkX * chunkSize;
+        obs.y += playerChunkY * chunkSize;
+    }
+}
+
+
     spawner.update(elapsedTime, player.x, player.y, 800, 600);
 
     updateCamera();
@@ -262,27 +283,31 @@ for (auto& bullet : bullets) {
 }
 
 
+
+
+
 bullets.erase(
     std::remove_if(bullets.begin(), bullets.end(),
         [this](const Bullet& b) {
-            return !b.alive 
-                || b.x < 0 || b.x > worldWidth 
-                || b.y < 0 || b.y > worldHeight;
+            if (!b.alive) return true;
+            float dx = b.x - player.x;
+            float dy = b.y - player.y;
+            return (dx*dx + dy*dy > 500*500);
         }),
     bullets.end()
 );
 
-    for (auto& b : enemyBullets) b.update();
-
 enemyBullets.erase(
     std::remove_if(enemyBullets.begin(), enemyBullets.end(),
         [this](const Bullet& b) {
-            return !b.alive 
-                || b.x < 0 || b.x > worldWidth 
-                || b.y < 0 || b.y > worldHeight;
+            if (!b.alive) return true;
+            float dx = b.x - player.x;
+            float dy = b.y - player.y;
+            return (dx*dx + dy*dy > 500*500);
         }),
     enemyBullets.end()
 );
+
 
 
 for (auto& b : enemyBullets) {
@@ -295,7 +320,8 @@ for (auto& b : enemyBullets) {
 
     for (auto it = enemies.begin(); it != enemies.end(); ) {
         if (!(*it)->alive) {
-            player.addScore(10);
+            int points = (*it)->getScoreValue();
+            player.addScore(points);
             playSound("enemy_death", 0);
             std::cout << "Enemy defeated! Score: " << player.score << std::endl;
             it = enemies.erase(it);
@@ -321,6 +347,27 @@ for (auto& b : enemyBullets) {
 void Engine::render() {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); 
     SDL_RenderClear(renderer);
+
+
+
+int renderDistance = 1; 
+obstacles.clear();
+
+for (int dx = -renderDistance; dx <= renderDistance; dx++) {
+    for (int dy = -renderDistance; dy <= renderDistance; dy++) {
+        ChunkCoord neighbor{playerChunkX + dx, playerChunkY + dy};
+        if (generatedChunks.count(neighbor)) {
+            for (auto& obs : generatedChunks[neighbor]) {
+                obstacles.push_back(obs);
+            }
+        }
+    }
+}
+
+
+
+
+
 
     renderPlayer.draw(player, renderer, camera, worldWidth, worldHeight);
 
@@ -370,7 +417,6 @@ void Engine::run() {
 
      Uint32 lastTime = SDL_GetTicks();
 
-     obstacles = obstacleSpawner.spawnRandomObstacles(20, worldWidth, worldHeight, 50, 150);
 
     while (running) {
         handleEvents();
@@ -500,13 +546,14 @@ camera.y = lerp(camera.y, player.y - 300, 0.1f);
  
 
 
-    camera.x = std::max(0, std::min(camera.x, worldWidth - 800));
-    camera.y = std::max(0, std::min(camera.y, worldHeight - 600));
+//     camera.x = std::max(0, std::min(camera.x, worldWidth - 800));
+//     camera.y = std::max(0, std::min(camera.y, worldHeight - 600));
 
-       if (camera.x < 0) camera.x += worldWidth;
-    if (camera.x >= worldWidth) camera.x -= worldWidth;
-    if (camera.y < 0) camera.y += worldHeight;
-    if (camera.y >= worldHeight) camera.y -= worldHeight;
+//        if (camera.x < 0) camera.x += worldWidth;
+//     if (camera.x >= worldWidth) camera.x -= worldWidth;
+//     if (camera.y < 0) camera.y += worldHeight;
+//     if (camera.y >= worldHeight) camera.y -= worldHeight;
+
 }
 
 

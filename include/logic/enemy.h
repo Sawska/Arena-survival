@@ -16,7 +16,7 @@ public:
     Enemy(int startX = 200, int startY = 200, int health = 50, int dmg = 10);
     virtual ~Enemy() = default;
 
-    virtual void moveTowards(int targetX, int targetY); 
+    virtual void moveTowards(int targetX, int targetY);
     virtual void update(int playerX, int playerY) { moveTowards(playerX, playerY); }
 
     void takeDamage(int damage);
@@ -26,6 +26,10 @@ public:
                         int x2, int y2, int w2, int h2);
 
     bool hitByBullet(const Bullet& bullet);
+
+
+    virtual int getScoreValue() const { return 10; }  
 };
+
 
 #endif

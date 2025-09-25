@@ -6,7 +6,6 @@ std::vector<Obstacle> ObstacleSpawner::spawnRandomObstacles(
     int count, int worldWidth, int worldHeight, int minSize, int maxSize
 ) {
     std::vector<Obstacle> obstacles;
-    obstacles.reserve(count);
 
     static bool seeded = false;
     if (!seeded) {
@@ -14,8 +13,7 @@ std::vector<Obstacle> ObstacleSpawner::spawnRandomObstacles(
         seeded = true;
     }
 
-
-    int actualCount = std::min(count, 8);
+    int actualCount = 1 + rand() % std::min(count, 3);
 
     for (int i = 0; i < actualCount; i++) {
         int size = minSize + rand() % (maxSize - minSize + 1);

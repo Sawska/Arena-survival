@@ -13,6 +13,8 @@ public:
 
     RangedEnemy(int startX, int startY, std::vector<Bullet>* bullets);
     void moveTowards(int playerX, int playerY) override;
+
+    int getScoreValue() const override { return 20; }
 };
 
 #endif

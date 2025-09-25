@@ -10,11 +10,14 @@ void Player::move(int dx, int dy, int worldWidth, int worldHeight) {
     x += static_cast<int>(dx * moveSpeed);
     y += static_cast<int>(dy * moveSpeed);
 
-    if (x < 0) x += worldWidth;
-    if (x >= worldWidth) x -= worldWidth;
-    if (y < 0) y += worldHeight;
-    if (y >= worldHeight) y -= worldHeight;
+    // if (x < 0) x += worldWidth;
+    // if (x >= worldWidth) x -= worldWidth;
+    // if (y < 0) y += worldHeight;
+    // if (y >= worldHeight) y -= worldHeight;
 }
+
+
+
 
 void Player::takeDamage(int damage) {
     hp -= damage;

@@ -22,12 +22,7 @@
 
 
 
-struct ChunkCoord {
-    int cx, cy;
-    bool operator<(const ChunkCoord& other) const {
-        return std::tie(cx, cy) < std::tie(other.cx, other.cy);
-    }
-};
+
 
 
 enum class GameState {
@@ -39,6 +34,12 @@ enum class GameState {
 };
 
 
+struct ChunkCoord {
+    int x, y;
+    bool operator<(const ChunkCoord& other) const {
+        return (x == other.x) ? y < other.y : x < other.x;
+    }
+};
 
 
 
@@ -50,9 +51,9 @@ class Engine {
     Player player;
     RenderPlayer renderPlayer;
 
-    ChunkCoord getCurrentChunk();
+ 
 
-    void updateWorld();
+
 
     std::vector<std::unique_ptr<Enemy>> enemies;   
      Spawner spawner;             
@@ -81,6 +82,8 @@ class Engine {
     std::map<std::string, Mix_Music*> musicTracks;
     std::map<std::string, Mix_Chunk*> soundEffects;
     
+    std::map<ChunkCoord, std::vector<Obstacle>> generatedChunks;
+
 
 
     void updateCamera();
@@ -90,6 +93,12 @@ class Engine {
     std::vector<Button> gameOverButtons;
 
     std::vector<Button> pauseButtons;
+
+
+    int playerChunkX = 0;
+int playerChunkY = 0;
+int chunkSize = 1000;
+
 
 
     std::vector<PlayerSkill> currentChoices;
