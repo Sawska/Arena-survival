@@ -7,3 +7,4 @@ void FastEnemy::moveTowards(int playerX, int playerY) {
     if (x < playerX) x += 3; else x -= 3;
     if (y < playerY) y += 3; else y -= 3;
 }
+

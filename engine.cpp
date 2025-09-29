@@ -95,11 +95,15 @@ void Engine::handleEvents() {
 
         switch (state) {
             case GameState::MENU:
+            if(!menuMusicPlaying) {
+    playMusic("menu_music", -1);
+    menuMusicPlaying = true; 
+            }
                 if (mousePressed) {
                     for (auto& btn : menuButtons) {
                         if (btn.isHovered(mouseX, mouseY)) {
                             if (btn.getText() == "Start") state = GameState::RUNNING;
-                            else if (btn.getText() == "Exit") running = false;
+                            else if (btn.getText() == "Exit") running = false, menuMusicPlaying = false;
                         }
                     }
                 }
@@ -405,6 +409,18 @@ for (int dx = -renderDistance; dx <= renderDistance; dx++) {
     SDL_RenderPresent(renderer);
 }
 
+std::ostream& operator<<(std::ostream& os, GameState s) {
+    switch (s) {
+        case GameState::MENU: return os << "MENU";
+        case GameState::RUNNING: return os << "RUNNING";
+        case GameState::GAME_OVER: return os << "GAME_OVER";
+        case GameState::LEVEL_UP: return os << "LEVEL_UP";
+        case GameState::PAUSE: return os << "PAUSE";
+        default: return os << "UNKNOWN";
+    }
+}
+
+
 
 void Engine::clean() {
     SDL_DestroyRenderer(renderer);
@@ -417,46 +433,72 @@ void Engine::run() {
 
      Uint32 lastTime = SDL_GetTicks();
 
+     loadAudio();
 
-    while (running) {
-        handleEvents();
-        Uint32 currentTime = SDL_GetTicks();
-        Uint32 delta = currentTime - lastTime;
-        lastTime = currentTime;
+     Mix_Volume(-1, MIX_MAX_VOLUME);
 
-        if(state == GameState::RUNNING) {
-                elapsedTime += delta; 
-        }
+std::cout << "State: " << state << std::endl;
 
-        
 
-        switch (state) {
-            case GameState::MENU:
-                playMusic("menu", -1);
-                renderMenu();  
-                break;
-            case GameState::RUNNING:
-                playMusic("background", -1);
-                update();
-                render();
-                break;
-            case GameState::GAME_OVER:
-                playMusic("game_over_music", -1);
-                playSound("game_over", 0);
-                renderGameOver();
-                break;
-            case GameState::LEVEL_UP:
-            playSound("level_up", 0);
-            render();
-            case GameState::PAUSE:
-                render();
-                break;
-        }
 
-        cleanupAudio();
+   while (running) {
+    handleEvents();
+    Uint32 currentTime = SDL_GetTicks();
+    Uint32 delta = currentTime - lastTime;
+    lastTime = currentTime;
 
-        SDL_Delay(16);
+    if (state == GameState::RUNNING) {
+        elapsedTime += delta;
     }
+    if (state != previousState) {
+    switch (state) {
+        case GameState::MENU:
+            playMusic("menu_music", -1);
+            break;
+        case GameState::RUNNING:
+            if (previousState != GameState::PAUSE) { 
+                playMusic("background", -1);
+            }
+            break;
+        case GameState::GAME_OVER:
+            playMusic("game_over_music", -1);
+            playSound("game_over", 0);
+            break;
+        case GameState::LEVEL_UP:
+            if (!levelUpSoundPlayed) {
+                playSound("level_up", 0);
+                levelUpSoundPlayed = true;
+            }
+            break;
+    }
+    previousState = state;
+}
+
+
+    switch (state) {
+        case GameState::MENU:
+            renderMenu();
+            break;
+        case GameState::RUNNING:
+            update();
+            render();
+            break;
+        case GameState::GAME_OVER:
+            renderGameOver();
+            break;
+        case GameState::LEVEL_UP:
+            render();
+            break;
+        case GameState::PAUSE:
+            render();
+            break;
+    }
+
+    SDL_Delay(16);
+}
+
+cleanupAudio();
+
 }
 
 
@@ -771,12 +813,12 @@ void Engine::loadAudio() {
         musicTracks["background"] = bgMusic;
     }
 
-    Mix_Music* menuMusic = Mix_LoadMUS("assets/audio/menu_music.mp3");
+    Mix_Music* menuMusic = Mix_LoadMUS("assets/audio/menu_music.ogg");
     if (!menuMusic) {
         std::cerr << "Failed to load menu music! Error: "
                   << Mix_GetError() << std::endl;
     } else {
-        musicTracks["menu"] = menuMusic;
+        musicTracks["menu_music"] = menuMusic;
     }
 
     Mix_Music* gameOverMusic = Mix_LoadMUS("assets/audio/game_over_music.mp3");
@@ -832,8 +874,14 @@ void Engine::loadAudio() {
 void Engine::playMusic(const std::string& id, int loops) {
     auto it = musicTracks.find(id);
     if (it != musicTracks.end()) {
-        Mix_PlayMusic(it->second, loops);
+    if (Mix_PlayMusic(it->second, loops) == -1) {
+        std::cerr << "Mix_PlayMusic failed for " << id 
+                  << "! Error: " << Mix_GetError() << std::endl;
+    } else {
+        std::cout << "Playing music: " << id << std::endl;
     }
+}
+
 }
 
 void Engine::playSound(const std::string& id, int loops) {

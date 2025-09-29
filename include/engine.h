@@ -93,6 +93,13 @@ class Engine {
     std::vector<Button> gameOverButtons;
 
     std::vector<Button> pauseButtons;
+    bool levelUpSoundPlayed  = false;
+
+    GameState previousState = GameState::MENU;
+
+    
+bool menuMusicPlaying = false;
+
 
 
     int playerChunkX = 0;
