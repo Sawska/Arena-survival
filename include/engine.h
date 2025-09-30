@@ -17,6 +17,7 @@
 #include "logic/obstacleSpawner.h"
 #include "render/button.h"
 #include <SDL2/SDL_mixer.h>
+#include <SDL2/SDL_image.h>
 #include <map>
 
 
@@ -101,6 +102,9 @@ class Engine {
 bool menuMusicPlaying = false;
 
 
+std::map<std::string, SDL_Texture*> guiTextures;
+
+
 
     int playerChunkX = 0;
 int playerChunkY = 0;
@@ -137,6 +141,7 @@ public:
     void playMusic(const std::string& id, int loops = -1);
     void playSound(const std::string& id, int loops = 0);
     void cleanupAudio();
+    void loadGUITextures();
      GameState state; 
     Camera camera;
     int worldWidth = 1600;

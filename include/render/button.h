@@ -13,6 +13,9 @@ public:
     SDL_Color hoverColor;
     TTF_Font* font;
 
+    SDL_Texture* normalTex = nullptr;
+    SDL_Texture* hoverTex  = nullptr;
+
     Button(int x, int y, int w, int h, const std::string& t,
            SDL_Color c = {100,100,255,255}, SDL_Color hc = {150,150,255,255}, TTF_Font* f = nullptr)
         : rect{x, y, w, h}, text(t), color(c), hoverColor(hc), font(f) {}

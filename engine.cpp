@@ -34,6 +34,7 @@ if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
 }
 
 
+
     window = SDL_CreateWindow("Game Engine",
                               SDL_WINDOWPOS_CENTERED,
                               SDL_WINDOWPOS_CENTERED,
@@ -50,8 +51,7 @@ if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
     }
     bullets.reserve(100);
     enemies.reserve(50);
-
-    font = TTF_OpenFont("/home/alex/Documents/Projects/game-engine/assets/font/OpenSans-Italic-VariableFont_wdth,wght.ttf", 24);
+        font = TTF_OpenFont("assets/kenney_ui-pack/Font/Kenney Future Narrow.ttf", 24);
     if (!font) {
         std::cout << "Font load error: " << TTF_GetError() << std::endl;
         return false;
@@ -68,6 +68,7 @@ if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
     pauseButtons.push_back(Button(300, 300, 200, 50, "Exit", {255,0,0}, {255,50,50}, font));
 
 
+loadGUITextures();
 
     running = true;
     return true;
@@ -145,38 +146,37 @@ void Engine::handleEvents() {
             case GameState::LEVEL_UP:
                 handleLevelUpEvent(event);
                 break;
-
             case GameState::PAUSE:
-                if (mousePressed) {
-                    if (mouseY >= 400 && mouseY <= 420 && mouseX >= 150 && mouseX <= 650) {
-                        musicVolume = ((mouseX - 150) * MIX_MAX_VOLUME) / 500;
-                        if (musicVolume < 0) musicVolume = 0;
-                        if (musicVolume > MIX_MAX_VOLUME) musicVolume = MIX_MAX_VOLUME;
-                        Mix_VolumeMusic(musicVolume);
-                    }
+    if (mousePressed) {
+        SDL_Rect musicBar = {150 + 20, 100 + 300, 500 - 40, 20};
+        if (mouseY >= musicBar.y && mouseY <= musicBar.y + musicBar.h &&
+            mouseX >= musicBar.x && mouseX <= musicBar.x + musicBar.w) {
+            musicVolume = ((mouseX - musicBar.x) * MIX_MAX_VOLUME) / musicBar.w;
+            musicVolume = std::clamp(musicVolume, 0, MIX_MAX_VOLUME);
+            Mix_VolumeMusic(musicVolume);
+        }
 
-                    if (mouseY >= 480 && mouseY <= 500 && mouseX >= 150 && mouseX <= 650) {
-                        soundVolume = ((mouseX - 150) * MIX_MAX_VOLUME) / 500;
-                        if (soundVolume < 0) soundVolume = 0;
-                        if (soundVolume > MIX_MAX_VOLUME) soundVolume = MIX_MAX_VOLUME;
-                    
-                        for (auto& [name, chunk] : soundEffects) {
-                            if (chunk) Mix_VolumeChunk(chunk, soundVolume);
-                        }
+        SDL_Rect soundBar = {150 + 20, 100 + 340, 500 - 40, 20};
+        if (mouseY >= soundBar.y && mouseY <= soundBar.y + soundBar.h &&
+            mouseX >= soundBar.x && mouseX <= soundBar.x + soundBar.w) {
+            soundVolume = ((mouseX - soundBar.x) * MIX_MAX_VOLUME) / soundBar.w;
+            soundVolume = std::clamp(soundVolume, 0, MIX_MAX_VOLUME);
 
-                    }
-
-  
-                    if (event.type == SDL_MOUSEBUTTONDOWN) {
-                        for (auto& btn : pauseButtons) {
-                            if (btn.isHovered(mouseX, mouseY)) {
-                                if (btn.getText() == "Resume") state = GameState::RUNNING;
-                                else if (btn.getText() == "Exit") running = false;
-                            }
-                        }
-                    }
+            for (auto& [name, chunk] : soundEffects) {
+                if (chunk) Mix_VolumeChunk(chunk, soundVolume);
+            }
+        }
+        if (event.type == SDL_MOUSEBUTTONDOWN) {
+            for (auto& btn : pauseButtons) {
+                if (btn.isHovered(mouseX, mouseY)) {
+                    if (btn.getText() == "Resume") state = GameState::RUNNING;
+                    else if (btn.getText() == "Exit") running = false;
                 }
-                break;
+            }
+        }
+    }
+    break;
+
         } 
     } 
 
@@ -501,81 +501,196 @@ cleanupAudio();
 
 }
 
-
-
 void Engine::renderGameOver() {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
 
-    SDL_SetRenderDrawColor(renderer, 50, 50, 50, 255);
     SDL_Rect panel { 100, 100, 600, 400 };
-    SDL_RenderFillRect(renderer, &panel);
+    if (guiTextures.count("panel") && guiTextures["panel"]) {
+        SDL_RenderCopy(renderer, guiTextures["panel"], nullptr, &panel);
+    } else {
+        SDL_SetRenderDrawColor(renderer, 50, 50, 50, 255);
+        SDL_RenderFillRect(renderer, &panel);
+    }
+    SDL_SetRenderDrawColor(renderer, 200, 200, 200, 255);
+    SDL_RenderDrawRect(renderer, &panel);
 
-    SDL_Color white = {255, 255, 255, 255};
+    SDL_Color white = {255,255,255,255};
     if (font) {
         SDL_Surface* surf = TTF_RenderText_Solid(font, "Game Over", white);
         SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surf);
-        SDL_Rect dst { 300, 120, surf->w, surf->h };
+        SDL_Rect dst { panel.x + (panel.w - surf->w) / 2, panel.y + 20, surf->w, surf->h };
         SDL_RenderCopy(renderer, tex, nullptr, &dst);
         SDL_FreeSurface(surf);
         SDL_DestroyTexture(tex);
 
         int seconds = finalElapsedTime / 1000;
         std::string infoText = "You survived: " + std::to_string(seconds) + "s | "
-                               "Level: " + std::to_string(player.level) + " | "
-                               "Score: " + std::to_string(player.score);
+                               "\nLevel: " + std::to_string(player.level) + " | "
+                               "\nScore: " + std::to_string(player.score);
 
-        SDL_Surface* surf2 = TTF_RenderText_Solid(font, infoText.c_str(), white);
+        int wrapLength = panel.w - 40;
+        SDL_Surface* surf2 = TTF_RenderText_Blended_Wrapped(font, infoText.c_str(), white, wrapLength);
         SDL_Texture* tex2 = SDL_CreateTextureFromSurface(renderer, surf2);
-        SDL_Rect dst2 { 150, 180, surf2->w, surf2->h }; 
+        SDL_Rect dst2 { panel.x + 20, panel.y + 80, surf2->w, surf2->h };
         SDL_RenderCopy(renderer, tex2, nullptr, &dst2);
         SDL_FreeSurface(surf2);
         SDL_DestroyTexture(tex2);
     }
 
+    int numButtons = static_cast<int>(gameOverButtons.size());
+    int btnW = 220;
+    int btnH = 60;
+    int gap = 16;
+    int bottomMargin = 36;
+
+    int totalHeight = numButtons * btnH + (numButtons - 1) * gap;
+    int startY = panel.y + panel.h - bottomMargin - totalHeight;
+
     int mouseX, mouseY;
     SDL_GetMouseState(&mouseX, &mouseY);
-    for (auto& btn : gameOverButtons) {
-        btn.draw(renderer, mouseX, mouseY);
+
+    for (int i = 0; i < numButtons; ++i) {
+        Button& btn = gameOverButtons[i];
+
+        SDL_Rect buttonBox;
+        buttonBox.w = btnW;
+        buttonBox.h = btnH;
+        buttonBox.x = panel.x + (panel.w - btnW) / 2; 
+        buttonBox.y = startY + i * (btnH + gap);
+
+        btn.rect = buttonBox;
+
+
+        if (guiTextures.count("button") && guiTextures["button"]) {
+            SDL_RenderCopy(renderer, guiTextures["button"], nullptr, &buttonBox);
+        } else {
+            SDL_SetRenderDrawColor(renderer, 50, 50, 150, 255);
+            SDL_RenderFillRect(renderer, &buttonBox);
+        }
+
+        // SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+        // SDL_RenderDrawRect(renderer, &buttonBox);
+
+        if (font) {
+            SDL_Surface* textSurf = TTF_RenderText_Solid(font, btn.getText().c_str(), white);
+            SDL_Texture* textTex = SDL_CreateTextureFromSurface(renderer, textSurf);
+
+            SDL_Rect textDst;
+            textDst.w = textSurf->w;
+            textDst.h = textSurf->h;
+            textDst.x = buttonBox.x + (buttonBox.w - textDst.w) / 2;
+            textDst.y = buttonBox.y + (buttonBox.h - textDst.h) / 2;
+
+            SDL_RenderCopy(renderer, textTex, nullptr, &textDst);
+
+            SDL_FreeSurface(textSurf);
+            SDL_DestroyTexture(textTex);
+        }
     }
 
     SDL_RenderPresent(renderer);
 }
+
+
 
 
 void Engine::renderMenu() {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
 
-    SDL_SetRenderDrawColor(renderer, 50, 50, 50, 255);
-    SDL_Rect panel { 100, 100, 600, 400 };
-    SDL_RenderFillRect(renderer, &panel);
+    SDL_Rect panel {100, 100, 600, 400};
+    if (guiTextures["panel"]) {
+        SDL_RenderCopy(renderer, guiTextures["panel"], nullptr, &panel);
+    } else {
+        SDL_SetRenderDrawColor(renderer, 50, 50, 50, 255);
+        SDL_RenderFillRect(renderer, &panel);
+    }
+
+    SDL_SetRenderDrawColor(renderer, 200, 200, 200, 255);
+    SDL_RenderDrawRect(renderer, &panel);
 
     SDL_Color white = {255, 255, 255, 255};
     if (font) {
         SDL_Surface* surf = TTF_RenderText_Solid(font, "My Game", white);
         SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surf);
-        SDL_Rect dst { 300, 120, surf->w, surf->h };
+        SDL_Rect dst { panel.x + (panel.w - surf->w)/2, panel.y + 20, surf->w, surf->h };
         SDL_RenderCopy(renderer, tex, nullptr, &dst);
         SDL_FreeSurface(surf);
         SDL_DestroyTexture(tex);
     }
 
-
     int mouseX, mouseY;
     SDL_GetMouseState(&mouseX, &mouseY);
+
+    int btnY = panel.y + 100; 
     for (auto& btn : menuButtons) {
-        btn.draw(renderer, mouseX, mouseY);
+
+        btn.rect.x = panel.x + (panel.w - btn.rect.w)/2;
+        btn.rect.y = btnY;
+
+
+        if (guiTextures["button"]) {
+            SDL_RenderCopy(renderer, guiTextures["button"], nullptr, &btn.rect);
+        } else {
+            SDL_SetRenderDrawColor(renderer, 70, 70, 200, 255);
+            SDL_RenderFillRect(renderer, &btn.rect);
+        }
+
+
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+        SDL_RenderDrawRect(renderer, &btn.rect);
+
+
+        if (font) {
+            SDL_Surface* textSurf = TTF_RenderText_Solid(font, btn.text.c_str(), white);
+            SDL_Texture* textTex = SDL_CreateTextureFromSurface(renderer, textSurf);
+
+            SDL_Rect textDst;
+            textDst.w = textSurf->w;
+            textDst.h = textSurf->h;
+            textDst.x = btn.rect.x + (btn.rect.w - textDst.w)/2;
+            textDst.y = btn.rect.y + (btn.rect.h - textDst.h)/2;
+
+            SDL_RenderCopy(renderer, textTex, nullptr, &textDst);
+
+            SDL_FreeSurface(textSurf);
+            SDL_DestroyTexture(textTex);
+        }
+
+        btnY += btn.rect.h + 20; 
     }
 
     SDL_RenderPresent(renderer);
 }
 
 
+
+
+
+
 float lerp(float a, float b, float t) {
     return a + (b - a) * t;
 }
 
+
+void Engine::loadGUITextures() {
+    guiTextures["panel"] = IMG_LoadTexture(renderer, "assets/kenney_ui-pack/PNG/Blue/Default/button_square_gloss.png");
+    guiTextures["panel_pause"] = IMG_LoadTexture(renderer, "assets/kenney_ui-pack/PNG/Greey/Default/button_square_gloss.png");
+    guiTextures["panel_gameover"] = IMG_LoadTexture(renderer, "assets/kenney_ui-pack/PNG/Red/Default/button_square_gloss.png");
+    guiTextures["button"] = IMG_LoadTexture(renderer, "assets/kenney_ui-pack/PNG/Greey/Default/button_rectangle_gloss.png");
+    guiTextures["button_pause"] = IMG_LoadTexture(renderer, "assets/kenney_ui-pack/PNG/Blue/Default/button_rectangle_gloss.png");
+    guiTextures["button_gameover"] = IMG_LoadTexture(renderer, "assets/kenney_ui-pack/PNG/Blue/Default/button_rectangle_gloss.png");
+    
+
+
+
+    for (auto& [key, tex] : guiTextures) {
+        if (!tex) {
+            std::cerr << "Failed to load GUI texture " << key << ": " << IMG_GetError() << std::endl;
+        }
+    }
+}
 
 
 
@@ -587,15 +702,6 @@ camera.x = lerp(camera.x, player.x - 400, 0.1f);
 camera.y = lerp(camera.y, player.y - 300, 0.1f);
  
 
-
-//     camera.x = std::max(0, std::min(camera.x, worldWidth - 800));
-//     camera.y = std::max(0, std::min(camera.y, worldHeight - 600));
-
-//        if (camera.x < 0) camera.x += worldWidth;
-//     if (camera.x >= worldWidth) camera.x -= worldWidth;
-//     if (camera.y < 0) camera.y += worldHeight;
-//     if (camera.y >= worldHeight) camera.y -= worldHeight;
-
 }
 
 
@@ -606,38 +712,79 @@ void Engine::triggerLevelUp() {
 
 
 void Engine::renderLevelUpScreen() {
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 180);  
     SDL_Rect overlay = {0, 0, 800, 600};
     SDL_RenderFillRect(renderer, &overlay);
 
-    SDL_Color white = {255, 255, 255, 255};
-    SDL_Surface* surf = TTF_RenderText_Solid(font, "Choose a Skill", white);
-    SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surf);
-    SDL_Rect dst = {250, 50, surf->w, surf->h};
-    SDL_RenderCopy(renderer, tex, nullptr, &dst);
-    SDL_FreeSurface(surf);
-    SDL_DestroyTexture(tex);
-
-    int y = 150;
-    for (int i = 0; i < currentChoices.size(); i++) {
-        SDL_Rect box = {150, y, 500, 80};
+    SDL_Rect panel {150, 100, 500, 400};
+    if (guiTextures.count("panel") && guiTextures["panel"]) {
+        SDL_RenderCopy(renderer, guiTextures["panel"], nullptr, &panel);
+    } else {
         SDL_SetRenderDrawColor(renderer, 50, 50, 100, 255);
-        SDL_RenderFillRect(renderer, &box);
+        SDL_RenderFillRect(renderer, &panel);
+    }
+    SDL_SetRenderDrawColor(renderer, 200, 200, 200, 255);
+    SDL_RenderDrawRect(renderer, &panel);
 
-        auto& skill = currentChoices[i];
-        SDL_Surface* surf2 = TTF_RenderText_Solid(font, skill.name.c_str(), white);
-        SDL_Texture* tex2 = SDL_CreateTextureFromSurface(renderer, surf2);
-        SDL_Rect dst2 = {box.x + 20, box.y + 20, surf2->w, surf2->h};
-        SDL_RenderCopy(renderer, tex2, nullptr, &dst2);
-        SDL_FreeSurface(surf2);
-        SDL_DestroyTexture(tex2);
+    SDL_Color white = {255, 255, 255, 255};
 
-        y += 100;
+    if (font) {
+        SDL_Surface* surf = TTF_RenderText_Solid(font, "Choose a Skill", white);
+        SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surf);
+        SDL_Rect dst { panel.x + (panel.w - surf->w)/2, panel.y + 20, surf->w, surf->h };
+        SDL_RenderCopy(renderer, tex, nullptr, &dst);
+        SDL_FreeSurface(surf);
+        SDL_DestroyTexture(tex);
     }
 
 
+    int numChoices = static_cast<int>(currentChoices.size());
+    int btnW = 400;
+    int btnH = 60;
+    int gap = 20;
+    int startY = panel.y + 80; 
+
+    for (int i = 0; i < numChoices; ++i) {
+        auto& skill = currentChoices[i];
+
+        SDL_Rect btnRect;
+        btnRect.w = btnW;
+        btnRect.h = btnH;
+        btnRect.x = panel.x + (panel.w - btnW)/2;
+        btnRect.y = startY + i * (btnH + gap);
+
+        if (guiTextures.count("button") && guiTextures["button"]) {
+            SDL_RenderCopy(renderer, guiTextures["button"], nullptr, &btnRect);
+        } else {
+            SDL_SetRenderDrawColor(renderer, 50, 50, 150, 255);
+            SDL_RenderFillRect(renderer, &btnRect);
+        }
+
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+        SDL_RenderDrawRect(renderer, &btnRect);
+
+        if (font) {
+            SDL_Surface* textSurf = TTF_RenderText_Solid(font, skill.name.c_str(), white);
+            SDL_Texture* textTex = SDL_CreateTextureFromSurface(renderer, textSurf);
+
+            SDL_Rect textDst;
+            textDst.w = textSurf->w;
+            textDst.h = textSurf->h;
+            textDst.x = btnRect.x + (btnRect.w - textDst.w)/2;
+            textDst.y = btnRect.y + (btnRect.h - textDst.h)/2;
+
+            SDL_RenderCopy(renderer, textTex, nullptr, &textDst);
+
+            SDL_FreeSurface(textSurf);
+            SDL_DestroyTexture(textTex);
+        }
+    }
+
     SDL_RenderPresent(renderer);
 }
+
+
 
 
 
@@ -670,8 +817,8 @@ void Engine::renderHUD() {
         hpText += "@ "; 
     }
 
-    int seconds = static_cast<int>(elapsedTime / 1000.0f);
-    std::string timeText = "Time: " + std::to_string(seconds) + "s";
+    int seconds = static_cast<int>(elapsedTime / 1000.0);
+    std::string timeText = "Time: " + std::to_string(seconds) + "Sec";
     std::string scoreText = "Score: " + std::to_string(player.score);
 
     int yOffset = 20;
@@ -719,10 +866,20 @@ void Engine::renderPauseMenu() {
     SDL_Rect overlay = {0, 0, 800, 600};
     SDL_RenderFillRect(renderer, &overlay);
 
+    SDL_Rect panel {150, 100, 500, 400};
+    if (guiTextures["panel_pause"]) {
+        SDL_RenderCopy(renderer, guiTextures["panel_pause"], nullptr, &panel);
+    } else {
+        SDL_SetRenderDrawColor(renderer, 50, 50, 100, 255); 
+        SDL_RenderFillRect(renderer, &panel);
+    }
+    SDL_SetRenderDrawColor(renderer, 200, 200, 200, 255); 
+    SDL_RenderDrawRect(renderer, &panel);
+
     if (font) {
         SDL_Surface* surf = TTF_RenderText_Solid(font, "Paused", white);
         SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surf);
-        SDL_Rect dst = {250, 50, surf->w, surf->h};
+        SDL_Rect dst {panel.x + (panel.w - surf->w)/2, panel.y + 20, surf->w, surf->h};
         SDL_RenderCopy(renderer, tex, nullptr, &dst);
         SDL_FreeSurface(surf);
         SDL_DestroyTexture(tex);
@@ -734,68 +891,80 @@ void Engine::renderPauseMenu() {
 
         SDL_Surface* surf2 = TTF_RenderText_Solid(font, infoText.c_str(), white);
         SDL_Texture* tex2 = SDL_CreateTextureFromSurface(renderer, surf2);
-        SDL_Rect dst2 = {150, 120, surf2->w, surf2->h};
+        SDL_Rect dst2 {panel.x + 20, panel.y + 60, surf2->w, surf2->h};
         SDL_RenderCopy(renderer, tex2, nullptr, &dst2);
         SDL_FreeSurface(surf2);
         SDL_DestroyTexture(tex2);
     }
-
-    int y = 200;
+    int btnY = panel.y + 120;
     for (auto& btn : pauseButtons) {
-        SDL_Rect box = {150, y, 500, 80};
-        SDL_SetRenderDrawColor(renderer, 50, 50, 100, 255);
-        SDL_RenderFillRect(renderer, &box);
+        btn.rect.x = panel.x + (panel.w - btn.rect.w)/2;
+        btn.rect.y = btnY;
 
-        if (font) {
-            SDL_Surface* surf = TTF_RenderText_Solid(font, btn.getText().c_str(), white);
-            SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surf);
-            SDL_Rect dst = {box.x + 20, box.y + 20, surf->w, surf->h};
-            SDL_RenderCopy(renderer, tex, nullptr, &dst);
-            SDL_FreeSurface(surf);
-            SDL_DestroyTexture(tex);
+        if (guiTextures["button_pause"]) {
+            SDL_RenderCopy(renderer, guiTextures["button_pause"], nullptr, &btn.rect);
+        } else {
+            SDL_SetRenderDrawColor(renderer, 70, 150, 70, 255);
+            SDL_RenderFillRect(renderer, &btn.rect);
         }
 
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); 
+        SDL_RenderDrawRect(renderer, &btn.rect);
 
-        y += 100;
+        if (font) {
+            SDL_Surface* textSurf = TTF_RenderText_Solid(font, btn.text.c_str(), white);
+            SDL_Texture* textTex = SDL_CreateTextureFromSurface(renderer, textSurf);
+
+            SDL_Rect textDst;
+            textDst.w = textSurf->w;
+            textDst.h = textSurf->h;
+            textDst.x = btn.rect.x + (btn.rect.w - textDst.w)/2;
+            textDst.y = btn.rect.y + (btn.rect.h - textDst.h)/2;
+
+            SDL_RenderCopy(renderer, textTex, nullptr, &textDst);
+
+            SDL_FreeSurface(textSurf);
+            SDL_DestroyTexture(textTex);
+        }
+
+        btnY += btn.rect.h + 20;
     }
 
+    SDL_Rect musicBar = {panel.x + 20, panel.y + 300, panel.w - 40, 20};
+    SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
+    SDL_RenderFillRect(renderer, &musicBar);
 
-SDL_Rect musicBar = {150, 400, 500, 20};   
-SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
-SDL_RenderFillRect(renderer, &musicBar);
+    int musicFillWidth = (musicVolume * musicBar.w) / MIX_MAX_VOLUME;
+    SDL_Rect musicFill = {musicBar.x, musicBar.y, musicFillWidth, musicBar.h};
+    SDL_SetRenderDrawColor(renderer, 0, 200, 50, 255);
+    SDL_RenderFillRect(renderer, &musicFill);
 
+    SDL_Surface* surfMusic = TTF_RenderText_Solid(font, "Music Volume", white);
+    SDL_Texture* texMusic = SDL_CreateTextureFromSurface(renderer, surfMusic);
+    SDL_Rect dstMusic = {musicBar.x, musicBar.y - 25, surfMusic->w, surfMusic->h};
+    SDL_RenderCopy(renderer, texMusic, nullptr, &dstMusic);
+    SDL_FreeSurface(surfMusic);
+    SDL_DestroyTexture(texMusic);
 
-int musicFillWidth = (musicVolume * musicBar.w) / MIX_MAX_VOLUME;
-SDL_Rect musicFill = {musicBar.x, musicBar.y, musicFillWidth, musicBar.h};
-SDL_SetRenderDrawColor(renderer, 0, 150, 255, 255);
-SDL_RenderFillRect(renderer, &musicFill);
+    SDL_Rect soundBar = {panel.x + 20, panel.y + 340, panel.w - 40, 20};
+    SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
+    SDL_RenderFillRect(renderer, &soundBar);
 
-SDL_Surface* surfMusic = TTF_RenderText_Solid(font, "Music Volume", white);
-SDL_Texture* texMusic = SDL_CreateTextureFromSurface(renderer, surfMusic);
-SDL_Rect dstMusic = {musicBar.x, musicBar.y - 30, surfMusic->w, surfMusic->h};
-SDL_RenderCopy(renderer, texMusic, nullptr, &dstMusic);
-SDL_FreeSurface(surfMusic);
-SDL_DestroyTexture(texMusic);
+    int soundFillWidth = (soundVolume * soundBar.w) / MIX_MAX_VOLUME;
+    SDL_Rect soundFill = {soundBar.x, soundBar.y, soundFillWidth, soundBar.h};
+    SDL_SetRenderDrawColor(renderer, 0, 150, 200, 255); 
+    SDL_RenderFillRect(renderer, &soundFill);
 
-SDL_Rect soundBar = {150, 480, 500, 20};
-SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
-SDL_RenderFillRect(renderer, &soundBar);
-
-int soundFillWidth = (soundVolume * soundBar.w) / MIX_MAX_VOLUME;
-SDL_Rect soundFill = {soundBar.x, soundBar.y, soundFillWidth, soundBar.h};
-SDL_SetRenderDrawColor(renderer, 0, 255, 100, 255);
-SDL_RenderFillRect(renderer, &soundFill);
-
-SDL_Surface* surfSound = TTF_RenderText_Solid(font, "Sound Volume", white);
-SDL_Texture* texSound = SDL_CreateTextureFromSurface(renderer, surfSound);
-SDL_Rect dstSound = {soundBar.x, soundBar.y - 30, surfSound->w, surfSound->h};
-SDL_RenderCopy(renderer, texSound, nullptr, &dstSound);
-SDL_FreeSurface(surfSound);
-SDL_DestroyTexture(texSound);
-
+    SDL_Surface* surfSound = TTF_RenderText_Solid(font, "Sound Volume", white);
+    SDL_Texture* texSound = SDL_CreateTextureFromSurface(renderer, surfSound);
+    SDL_Rect dstSound = {soundBar.x, soundBar.y - 25, surfSound->w, surfSound->h};
+    SDL_RenderCopy(renderer, texSound, nullptr, &dstSound);
+    SDL_FreeSurface(surfSound);
+    SDL_DestroyTexture(texSound);
 
     SDL_RenderPresent(renderer);
 }
+
 
 
 void Engine::loadAudio() {
@@ -813,7 +982,7 @@ void Engine::loadAudio() {
         musicTracks["background"] = bgMusic;
     }
 
-    Mix_Music* menuMusic = Mix_LoadMUS("assets/audio/menu_music.ogg");
+    Mix_Music* menuMusic = Mix_LoadMUS("assets/audio/menu_music.mp3");
     if (!menuMusic) {
         std::cerr << "Failed to load menu music! Error: "
                   << Mix_GetError() << std::endl;
