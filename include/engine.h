@@ -65,6 +65,9 @@ class Engine {
 
     std::vector<Bullet> enemyBullets;
 
+
+    SDL_Texture* background;
+
     std::vector<Obstacle> obstacles;
     RenderObstacle renderObstacle;
     ObstacleSpawner obstacleSpawner;

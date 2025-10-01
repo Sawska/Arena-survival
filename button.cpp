@@ -11,7 +11,6 @@ void Button::draw(SDL_Renderer* renderer, int mouseX, int mouseY) {
     } else if (normalTex) {
         SDL_RenderCopy(renderer, normalTex, nullptr, &rect);
     } else {
-        // fallback: draw colored rect
         SDL_Color drawColor = hovered ? hoverColor : color;
         SDL_SetRenderDrawColor(renderer, drawColor.r, drawColor.g, drawColor.b, drawColor.a);
         SDL_RenderFillRect(renderer, &rect);

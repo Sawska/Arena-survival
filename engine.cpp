@@ -7,7 +7,7 @@ Engine::Engine()
       running(false),
       player(100, 100),
       renderPlayer(&player),
-      renderEnemy(),      
+      renderEnemy(),
       spawner(enemies, &enemyBullets),
       state(GameState::MENU)
 {}
@@ -35,6 +35,14 @@ if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
 
 
 
+if (!(IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG)) {
+    SDL_Log("SDL_image init failed: %s", IMG_GetError());
+    return false;
+}
+
+
+
+
     window = SDL_CreateWindow("Game Engine",
                               SDL_WINDOWPOS_CENTERED,
                               SDL_WINDOWPOS_CENTERED,
@@ -49,6 +57,7 @@ if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
         std::cout << "Renderer Error: " << SDL_GetError() << std::endl;
         return false;
     }
+  
     bullets.reserve(100);
     enemies.reserve(50);
         font = TTF_OpenFont("assets/kenney_ui-pack/Font/Kenney Future Narrow.ttf", 24);
@@ -68,8 +77,25 @@ if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
     pauseButtons.push_back(Button(300, 300, 200, 50, "Exit", {255,0,0}, {255,50,50}, font));
 
 
-loadGUITextures();
+SDL_Surface* bgSurface = IMG_Load("assets/background.png");
+if (!bgSurface) {
+    std::cout << "Failed to load background image: " << IMG_GetError() << std::endl;
+    return false;
+}
 
+background = SDL_CreateTextureFromSurface(renderer, bgSurface);
+SDL_FreeSurface(bgSurface);
+
+if (!background) {
+    std::cout << "Failed to create background texture: " << SDL_GetError() << std::endl;
+    return false;
+}
+
+
+
+
+loadGUITextures();
+renderEnemy.loadTextures(renderer);
     running = true;
     return true;
 }
@@ -370,6 +396,8 @@ for (int dx = -renderDistance; dx <= renderDistance; dx++) {
 
 
 
+    SDL_RenderCopy(renderer, background, nullptr, nullptr); 
+
 
 
 
@@ -501,13 +529,14 @@ cleanupAudio();
 
 }
 
+
 void Engine::renderGameOver() {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
 
     SDL_Rect panel { 100, 100, 600, 400 };
-    if (guiTextures.count("panel") && guiTextures["panel"]) {
-        SDL_RenderCopy(renderer, guiTextures["panel"], nullptr, &panel);
+    if (guiTextures.count("panel_gameover") && guiTextures[""]) {
+        SDL_RenderCopy(renderer, guiTextures["panel_gameover"], nullptr, &panel);
     } else {
         SDL_SetRenderDrawColor(renderer, 50, 50, 50, 255);
         SDL_RenderFillRect(renderer, &panel);

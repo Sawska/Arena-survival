@@ -8,12 +8,14 @@ class Enemy {
 public:
     int x, y;
     int hp;
-    int width = 50;
-    int height = 50;
+    int width = 50;  
+    int height = 50;  
     int damage;
     bool alive = true;
 
-    Enemy(int startX = 200, int startY = 200, int health = 50, int dmg = 10);
+    float scale; 
+
+    Enemy(int startX = 200, int startY = 200, int health = 50, int dmg = 10, float renderScale=3.0f);
     virtual ~Enemy() = default;
 
     virtual void moveTowards(int targetX, int targetY);
@@ -27,9 +29,7 @@ public:
 
     bool hitByBullet(const Bullet& bullet);
 
-
     virtual int getScoreValue() const { return 10; }  
 };
-
 
 #endif

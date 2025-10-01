@@ -3,13 +3,9 @@
 
 
 
-Enemy::Enemy(int startX, int startY, int health, int dmg)
-{
-    x = startX;
-    y = startY;
-    hp = health;
-    damage = dmg;
-}
+Enemy::Enemy(int startX, int startY, int health, int dmg, float renderScale)
+    : x(startX), y(startY), hp(health), damage(dmg), scale(renderScale)
+{}
 
 void Enemy::moveTowards(int targetX, int targetY)
 {
@@ -21,7 +17,10 @@ void Enemy::moveTowards(int targetX, int targetY)
 }
 
 bool Enemy::hitPlayer(const Player& player) {
-    if (checkCollision(x, y, width, height,
+    int scaledWidth  = static_cast<int>(width );
+    int scaledHeight = static_cast<int>(height);
+
+    if (checkCollision(x, y, scaledWidth, scaledHeight,
                        player.x, player.y, player.width, player.height)) {
         die();
         return true;
@@ -29,14 +28,21 @@ bool Enemy::hitPlayer(const Player& player) {
     return false;
 }
 
+bool Enemy::hitByBullet(const Bullet& bullet) {
+    if (!alive) return false;
 
+    int scaledWidth  = static_cast<int>(width * scale);
+    int scaledHeight = static_cast<int>(height * scale);
 
+    bool collisionX = bullet.x + bullet.width > x && bullet.x < x + scaledWidth;
+    bool collisionY = bullet.y + bullet.height > y && bullet.y < y + scaledHeight;
 
+    return collisionX && collisionY;
+}
 
-void Enemy::takeDamage(int damage)
-{
+void Enemy::takeDamage(int damage) {
     hp -= damage;
-    if (hp < 0) {
+    if (hp <= 0) {
         die();
         hp = 0;
     }
@@ -49,21 +55,10 @@ void Enemy::die() {
 }
 
 bool Enemy::checkCollision(int x1, int y1, int w1, int h1,
-                    int x2, int y2, int w2, int h2) {
+                           int x2, int y2, int w2, int h2) {
     return x1 < x2 + w2 &&
            x1 + w1 > x2 &&
            y1 < y2 + h2 &&
            y1 + h1 > y2;
-}
-
-
-
-bool Enemy::hitByBullet(const Bullet& bullet) {
-    if (!alive) return false;
-
-    bool collisionX = bullet.x + bullet.width > x && bullet.x < x + width;
-    bool collisionY = bullet.y + bullet.height > y && bullet.y < y + height;
-
-    return collisionX && collisionY;
 }
 

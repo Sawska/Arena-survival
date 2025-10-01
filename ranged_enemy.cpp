@@ -2,7 +2,7 @@
 #include <cmath>
 
 RangedEnemy::RangedEnemy(int startX, int startY, std::vector<Bullet>* bullets)
-    : Enemy(startX, startY, 30, 10), enemyBullets(bullets) {}
+    : Enemy(startX, startY, 30, 10,3.0f), enemyBullets(bullets) {}
 
 void RangedEnemy::moveTowards(int playerX, int playerY) {
 

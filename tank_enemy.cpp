@@ -1,7 +1,7 @@
 #include "logic/tank_enemy.h"
 
 TankEnemy::TankEnemy(int startX, int startY)
-    : Enemy(startX, startY, 200, 80) {} 
+    : Enemy(startX, startY, 200, 80,5.0f) {} 
 
 
 
