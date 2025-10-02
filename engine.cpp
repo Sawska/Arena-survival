@@ -76,25 +76,27 @@ if (!(IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG)) {
     pauseButtons.push_back(Button(300, 200, 200, 50, "Resume", {0,255,0}, {50,255,50}, font));
     pauseButtons.push_back(Button(300, 300, 200, 50, "Exit", {255,0,0}, {255,50,50}, font));
 
-
-SDL_Surface* bgSurface = IMG_Load("assets/background.png");
+SDL_Surface* bgSurface = IMG_Load("assets/DO Terrain/Terrain/L1_Grass.PNG");
 if (!bgSurface) {
     std::cout << "Failed to load background image: " << IMG_GetError() << std::endl;
     return false;
 }
 
+SDL_SetColorKey(bgSurface, SDL_TRUE, SDL_MapRGB(bgSurface->format, 255, 0, 255));
+
 background = SDL_CreateTextureFromSurface(renderer, bgSurface);
+
+tileWidth = bgSurface->w;
+tileHeight = bgSurface->h;
+
 SDL_FreeSurface(bgSurface);
 
-if (!background) {
-    std::cout << "Failed to create background texture: " << SDL_GetError() << std::endl;
-    return false;
-}
 
 
 
 
 loadGUITextures();
+renderPlayer.loadTexture(renderer);
 renderEnemy.loadTextures(renderer);
     running = true;
     return true;
@@ -380,6 +382,16 @@ void Engine::render() {
 
 
 
+for (int y = -camera.y % tileHeight; y < 600; y += tileHeight) {
+    for (int x = -camera.x % tileWidth; x < 800; x += tileWidth) {
+        SDL_Rect destRect = { x, y, tileWidth, tileHeight };
+        SDL_RenderCopy(renderer, background, nullptr, &destRect);
+    }
+}
+
+
+
+
 int renderDistance = 1; 
 obstacles.clear();
 
@@ -396,7 +408,7 @@ for (int dx = -renderDistance; dx <= renderDistance; dx++) {
 
 
 
-    SDL_RenderCopy(renderer, background, nullptr, nullptr); 
+
 
 
 

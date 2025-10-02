@@ -146,6 +146,8 @@ public:
     void cleanupAudio();
     void loadGUITextures();
      GameState state; 
+     int tileWidth;
+int tileHeight;
     Camera camera;
     int worldWidth = 1600;
     int worldHeight = 1200;
