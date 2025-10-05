@@ -76,13 +76,18 @@ if (!(IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG)) {
     pauseButtons.push_back(Button(300, 200, 200, 50, "Resume", {0,255,0}, {50,255,50}, font));
     pauseButtons.push_back(Button(300, 300, 200, 50, "Exit", {255,0,0}, {255,50,50}, font));
 
-SDL_Surface* bgSurface = IMG_Load("assets/DO Terrain/Terrain/L1_Grass.PNG");
+SDL_Surface* bgSurface = IMG_Load("assets/Dungeon Crawl Stone Soup Full/dungeon/floor/grass/grass_0_old.png");
 if (!bgSurface) {
     std::cout << "Failed to load background image: " << IMG_GetError() << std::endl;
     return false;
 }
 
 SDL_SetColorKey(bgSurface, SDL_TRUE, SDL_MapRGB(bgSurface->format, 255, 0, 255));
+
+
+
+
+
 
 background = SDL_CreateTextureFromSurface(renderer, bgSurface);
 
@@ -92,7 +97,12 @@ tileHeight = bgSurface->h;
 SDL_FreeSurface(bgSurface);
 
 
+ playerBulletTexture = IMG_LoadTexture(renderer, "assets/image.png");
+ enemyBulletTexture  = IMG_LoadTexture(renderer, "assets/image.png");
 
+ if (!playerBulletTexture || !enemyBulletTexture) {
+    std::cerr << "Failed to load bullet textures: " << IMG_GetError() << std::endl;
+}
 
 
 loadGUITextures();
@@ -379,15 +389,20 @@ for (auto& b : enemyBullets) {
 void Engine::render() {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); 
     SDL_RenderClear(renderer);
-
-
-
-for (int y = -camera.y % tileHeight; y < 600; y += tileHeight) {
-    for (int x = -camera.x % tileWidth; x < 800; x += tileWidth) {
+ 
+for (int y = -tileHeight + (-camera.y % tileHeight); 
+     y < 600 + tileHeight; 
+     y += tileHeight) 
+{
+    for (int x = -tileWidth + (-camera.x % tileWidth); 
+         x < 800 + tileWidth; 
+         x += tileWidth) 
+    {
         SDL_Rect destRect = { x, y, tileWidth, tileHeight };
         SDL_RenderCopy(renderer, background, nullptr, &destRect);
     }
 }
+
 
 
 
@@ -420,12 +435,12 @@ for (int dx = -renderDistance; dx <= renderDistance; dx++) {
     }
 
     for (auto& bullet : bullets) {
-        renderBullet.draw(bullet, renderer, camera, worldWidth, worldHeight);
+        renderBullet.draw(bullet, renderer, camera, worldWidth, worldHeight,playerBulletTexture, enemyBulletTexture);
     }
 
     for (auto& b : enemyBullets) {
         b.isEnemy = true;
-    renderBullet.draw(b, renderer,camera, worldWidth, worldHeight);
+    renderBullet.draw(b, renderer,camera, worldWidth, worldHeight,playerBulletTexture, enemyBulletTexture);
 }
 
     for(const auto& obstacle : obstacles) {

@@ -10,7 +10,9 @@ public:
     RenderBullet() = default;
 
 
-  void draw(const Bullet& bullet, SDL_Renderer* renderer, const Camera& cam, int worldWidth, int worldHeight);
+  void draw(const Bullet& bullet, SDL_Renderer* renderer, 
+                        const Camera& cam, int screenWidth, int screenHeight,
+                        SDL_Texture* playerBulletTexture, SDL_Texture* enemyBulletTexture);
 };
 
 #endif // RENDERBULLET_H

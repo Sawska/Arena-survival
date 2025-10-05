@@ -157,38 +157,51 @@ std::vector<PlayerSkill> Player::getRandomSkillChoices() {
 std::vector<Bullet> Player::shoot(int targetX, int targetY) {
     std::vector<Bullet> shots;
 
-    float dx = targetX - x;
-    float dy = targetY - y;
-    float length = sqrt(dx*dx + dy*dy);
+    float offsetX = 0.0f;   
+    float offsetY = -10.0f;
+
+    float centerX = x + width / 2.0f + offsetX;
+    float centerY = y + height / 2.0f + offsetY;
+
+    float dx = targetX - centerX;
+    float dy = targetY - centerY;
+    float length = sqrt(dx * dx + dy * dy);
     if (length == 0) return shots;
 
     float vx = dx / length * bulletSpeed;
     float vy = dy / length * bulletSpeed;
 
-
     if (hasLaser) {
-        shots.emplace_back(x, y, vx * 9999, vy * 9999, bulletDamage * 2, bulletSize * 4, false, true,false);
-
+        shots.emplace_back(centerX, centerY, vx * 9999, vy * 9999,
+                           bulletDamage * 2, bulletSize * 4,
+                           false, true, false);
         return shots;
     }
 
     if (hasGrenade) {
-        shots.emplace_back(x, y, vx, vy, bulletDamage * 3, bulletSize * 2, false, false,true);
+        shots.emplace_back(centerX, centerY, vx, vy,
+                           bulletDamage * 3, bulletSize * 2,
+                           false, false, true);
         return shots;
     }
 
-
-    shots.emplace_back(x, y, vx, vy, bulletDamage, bulletSize,false, false,false);
-
+    shots.emplace_back(centerX, centerY, vx, vy,
+                       bulletDamage, bulletSize,
+                       false, false, false);
 
     for (int i = 0; i < extraShots; ++i) {
-        shots.emplace_back(x, y, vx, vy, bulletDamage, bulletSize,false, false,false);
+        shots.emplace_back(centerX, centerY, vx, vy,
+                           bulletDamage, bulletSize,
+                           false, false, false);
     }
 
-
     if (diagonalShots) {
-        shots.emplace_back(x, y, vx, -vy, bulletDamage, bulletSize,false, false,false); 
-        shots.emplace_back(x, y, -vx, vy, bulletDamage, bulletSize,false, false,false);
+        shots.emplace_back(centerX, centerY, vx, -vy,
+                           bulletDamage, bulletSize,
+                           false, false, false);
+        shots.emplace_back(centerX, centerY, -vx, vy,
+                           bulletDamage, bulletSize,
+                           false, false, false);
     }
 
     if (shotgun) {
@@ -201,10 +214,13 @@ std::vector<Bullet> Player::shoot(int targetX, int targetY) {
         float vx2 = vx * cosA + vy * sinA;
         float vy2 = -vx * sinA + vy * cosA;
 
-        shots.emplace_back(x, y, vx1, vy1, bulletDamage, bulletSize,false, false,false);
-        shots.emplace_back(x, y, vx2, vy2, bulletDamage, bulletSize,false, false,false);
+        shots.emplace_back(centerX, centerY, vx1, vy1,
+                           bulletDamage, bulletSize,
+                           false, false, false);
+        shots.emplace_back(centerX, centerY, vx2, vy2,
+                           bulletDamage, bulletSize,
+                           false, false, false);
     }
 
     return shots;
 }
-

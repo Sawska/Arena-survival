@@ -13,8 +13,8 @@ public:
     int score;
     bool isAlive = true;
 
-    int width = 50;
-    int height = 50;
+    int width = 150;
+    int height = 150;
 
     int level = 1;
     int exp = 0;

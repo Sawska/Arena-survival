@@ -129,6 +129,9 @@ int soundVolume = MIX_MAX_VOLUME;
 public:
     Engine();
     ~Engine();
+    std::vector<SDL_Texture*> grassTiles;
+    SDL_Texture* playerBulletTexture;
+    SDL_Texture* enemyBulletTexture;
 
     bool init();
     void handleEvents();
