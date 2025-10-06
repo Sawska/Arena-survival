@@ -97,12 +97,56 @@ tileHeight = bgSurface->h;
 SDL_FreeSurface(bgSurface);
 
 
- playerBulletTexture = IMG_LoadTexture(renderer, "assets/image.png");
- enemyBulletTexture  = IMG_LoadTexture(renderer, "assets/image.png");
-
- if (!playerBulletTexture || !enemyBulletTexture) {
-    std::cerr << "Failed to load bullet textures: " << IMG_GetError() << std::endl;
+SDL_Surface* surface = IMG_Load("assets/image.png");
+if (!surface) {
+    std::cerr << "Failed to load bullet surface: " << IMG_GetError() << std::endl;
 }
+
+
+SDL_SetColorKey(surface, SDL_TRUE, SDL_MapRGB(surface->format, 255, 0, 255));
+
+playerBulletTexture = SDL_CreateTextureFromSurface(renderer, surface);
+
+
+SDL_FreeSurface(surface);
+
+
+SDL_Surface* surface_enemy = IMG_Load("assets/enemy_bullet.png");
+if (!surface_enemy) {
+    std::cerr << "Failed to load bullet surface: " << IMG_GetError() << std::endl;
+}
+enemyBulletTexture  = SDL_CreateTextureFromSurface(renderer, surface_enemy);
+
+SDL_SetColorKey(surface_enemy, SDL_TRUE, SDL_MapRGB(surface_enemy->format, 255, 0, 255));
+
+
+if (!playerBulletTexture || !enemyBulletTexture) {
+    std::cerr << "Failed to create bullet textures: " << SDL_GetError() << std::endl;
+}
+
+
+
+SDL_FreeSurface(surface_enemy);
+
+SDL_Surface* heartSurface = IMG_Load("assets/heart.png");
+
+if (!heartSurface) {
+    std::cerr << "Failed to load heart surface: " << IMG_GetError() << std::endl;
+    return false;
+}
+
+SDL_SetColorKey(heartSurface, SDL_TRUE, SDL_MapRGB(heartSurface->format, 255, 0, 255));
+
+playerHeartTexture = SDL_CreateTextureFromSurface(renderer, heartSurface);
+
+if(!playerHeartTexture) {
+    std::cerr << "Failed to create heart texture: " << SDL_GetError() << std::endl;
+    SDL_FreeSurface(heartSurface);
+    return false;
+}
+
+SDL_FreeSurface(heartSurface);
+
 
 
 loadGUITextures();
@@ -625,8 +669,7 @@ void Engine::renderGameOver() {
             SDL_RenderFillRect(renderer, &buttonBox);
         }
 
-        // SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-        // SDL_RenderDrawRect(renderer, &buttonBox);
+
 
         if (font) {
             SDL_Surface* textSurf = TTF_RenderText_Solid(font, btn.getText().c_str(), white);
@@ -651,9 +694,37 @@ void Engine::renderGameOver() {
 
 
 
+
+
 void Engine::renderMenu() {
+   Uint32 currentTime = SDL_GetTicks();
+    float deltaTime = (lastTime > 0) ? (currentTime - lastTime) / 1000.0f : 0.0f;
+    lastTime = currentTime;
+
+    bgOffsetX += bgScrollSpeedX * deltaTime;
+    bgOffsetY += bgScrollSpeedY * deltaTime;
+
+    if (bgOffsetX > tileWidth) bgOffsetX -= tileWidth;
+    if (bgOffsetY > tileHeight) bgOffsetY -= tileHeight;
+
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
+
+    const int screenW = 800;
+    const int screenH = 600;
+
+    if (background && tileWidth > 0 && tileHeight > 0) {
+        int startX = -static_cast<int>(bgOffsetX);
+        int startY = -static_cast<int>(bgOffsetY);
+
+        for (int y = startY; y < screenH; y += tileHeight) {
+            for (int x = startX; x < screenW; x += tileWidth) {
+                SDL_Rect dest{ x, y, tileWidth, tileHeight };
+                SDL_RenderCopy(renderer, background, nullptr, &dest);
+            }
+        }
+    }
+
 
     SDL_Rect panel {100, 100, 600, 400};
     if (guiTextures["panel"]) {
@@ -719,7 +790,6 @@ void Engine::renderMenu() {
 
     SDL_RenderPresent(renderer);
 }
-
 
 
 
@@ -867,17 +937,36 @@ void Engine::handleLevelUpEvent(SDL_Event& e) {
 void Engine::renderHUD() {
     SDL_Color white = {255, 255, 255, 255};
 
-    int hearts = player.hp / 20; 
-    std::string hpText = "HP: ";
-    for (int i = 0; i < hearts; i++) {
-        hpText += "@ "; 
+    int hearts = player.hp / 20;
+    int xOffset = 20;
+    int yOffset = 20;
+
+    if (playerHeartTexture) {
+        for (int i = 0; i < hearts; i++) {
+            SDL_Rect dst = { xOffset + i * 32, yOffset, 32, 32 };
+            SDL_RenderCopy(renderer, playerHeartTexture, nullptr, &dst);
+        }
+    } else {
+
+        std::string hpText = "HP: ";
+        for (int i = 0; i < hearts; i++) {
+            hpText += "♥ ";
+        }
+
+        SDL_Surface* surf = TTF_RenderText_Solid(font, hpText.c_str(), white);
+        if (surf) {
+            SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surf);
+            SDL_Rect dst = { xOffset, yOffset, surf->w, surf->h };
+            SDL_RenderCopy(renderer, tex, nullptr, &dst);
+            SDL_FreeSurface(surf);
+            SDL_DestroyTexture(tex);
+        }
     }
 
-    int seconds = static_cast<int>(elapsedTime / 1000.0);
-    std::string timeText = "Time: " + std::to_string(seconds) + "Sec";
-    std::string scoreText = "Score: " + std::to_string(player.score);
 
-    int yOffset = 20;
+    int seconds = static_cast<int>(elapsedTime / 1000.0);
+    std::string timeText  = "Time: " + std::to_string(seconds) + " Sec";
+    std::string scoreText = "Score: " + std::to_string(player.score);
 
     auto renderText = [&](const std::string& text, int y) {
         SDL_Surface* surf = TTF_RenderText_Solid(font, text.c_str(), white);
@@ -908,9 +997,8 @@ void Engine::renderHUD() {
         SDL_DestroyTexture(tex);
     };
 
-    renderText(hpText, yOffset);
-    renderText(timeText, yOffset + 30);
-    renderText(scoreText, yOffset + 60);
+    renderText(timeText, yOffset + 40);
+    renderText(scoreText, yOffset + 70);
 }
 
 

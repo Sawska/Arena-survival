@@ -4,7 +4,7 @@ void RenderBullet::draw(const Bullet& bullet, SDL_Renderer* renderer,
                         const Camera& cam, int screenWidth, int screenHeight,
                         SDL_Texture* playerBulletTexture, SDL_Texture* enemyBulletTexture)
 {
-    int size = bullet.isEnemy ? 10 : 5;
+    int size = bullet.isEnemy ? 20 : 30;
     int bx = static_cast<int>(bullet.x - cam.x - size / 4);
     int by = static_cast<int>(bullet.y - cam.y - size / 4);
 

@@ -129,7 +129,7 @@ int soundVolume = MIX_MAX_VOLUME;
 public:
     Engine();
     ~Engine();
-    std::vector<SDL_Texture*> grassTiles;
+    SDL_Texture* playerHeartTexture;
     SDL_Texture* playerBulletTexture;
     SDL_Texture* enemyBulletTexture;
 
@@ -154,6 +154,13 @@ int tileHeight;
     Camera camera;
     int worldWidth = 1600;
     int worldHeight = 1200;
+
+    float bgOffsetX = 0.0f;
+float bgOffsetY = 0.0f;
+float bgScrollSpeedX = 20.0f; 
+float bgScrollSpeedY = 10.0f; 
+Uint32 lastTime = 0;
+
 };
 
 

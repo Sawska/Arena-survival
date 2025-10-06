@@ -8,8 +8,8 @@ public:
     int damage;
     bool alive;
     bool isEnemy;
-    int width = 5;
-    int height = 5;
+    int width = 15;
+    int height = 15;
 
     bool piercing = false; 
     bool isGrenade = false; 
