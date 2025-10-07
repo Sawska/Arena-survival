@@ -7,7 +7,8 @@
 
 class RenderObstacle {
 public:
-    static void draw(const Obstacle& obstacle, SDL_Renderer* renderer, const Camera& cam);
+    static void draw(const Obstacle& obstacle, SDL_Renderer* renderer, const Camera& cam, SDL_Texture* obstacleTexture);
+    
 };
 
 #endif

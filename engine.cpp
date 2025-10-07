@@ -111,6 +111,15 @@ playerBulletTexture = SDL_CreateTextureFromSurface(renderer, surface);
 SDL_FreeSurface(surface);
 
 
+SDL_Surface* obstacbleSurface = IMG_Load("assets/Dungeon Crawl Stone Soup Full/dungeon/trees/tree_1_red.png");
+if (!obstacbleSurface) {
+    std::cerr << "Failed to load obstacle surface: " << IMG_GetError() << std::endl;
+}
+SDL_SetColorKey(obstacbleSurface, SDL_TRUE, SDL_MapRGB(obstacbleSurface->format, 255, 0, 255));
+
+obstacleTexture = SDL_CreateTextureFromSurface(renderer, obstacbleSurface);
+
+
 SDL_Surface* surface_enemy = IMG_Load("assets/enemy_bullet.png");
 if (!surface_enemy) {
     std::cerr << "Failed to load bullet surface: " << IMG_GetError() << std::endl;
@@ -204,7 +213,7 @@ void Engine::handleEvents() {
                                 loadedChunks.clear();
                                 generatedChunks.clear();
                                 obstacles.clear();
-                                obstacles = obstacleSpawner.spawnRandomObstacles(10, worldWidth, worldHeight, 20, 60);
+                                obstacles = obstacleSpawner.spawnRandomObstacles(10, worldWidth, worldHeight, 30, 60);
                                 elapsedTime = 0;
                                 state = GameState::RUNNING;
                             } else if (btn.getText() == "Exit") {
@@ -488,7 +497,7 @@ for (int dx = -renderDistance; dx <= renderDistance; dx++) {
 }
 
     for(const auto& obstacle : obstacles) {
-        RenderObstacle::draw(obstacle, renderer, camera);
+        RenderObstacle::draw(obstacle, renderer, camera,obstacleTexture);
     }
 
     if(state == GameState::LEVEL_UP) {
@@ -934,36 +943,39 @@ void Engine::handleLevelUpEvent(SDL_Event& e) {
     }
 }
 
+
+
 void Engine::renderHUD() {
     SDL_Color white = {255, 255, 255, 255};
 
     int hearts = player.hp / 20;
-    int xOffset = 20;
     int yOffset = 20;
 
+    int screenW, screenH;
+    SDL_GetRendererOutputSize(renderer, &screenW, &screenH);
+
     if (playerHeartTexture) {
+        int heartWidth = 32;
+        int totalWidth = hearts * heartWidth;
+        int xOffset = screenW - totalWidth - 20; 
+
         for (int i = 0; i < hearts; i++) {
-            SDL_Rect dst = { xOffset + i * 32, yOffset, 32, 32 };
+            SDL_Rect dst = { xOffset + i * heartWidth, yOffset, heartWidth, heartWidth };
             SDL_RenderCopy(renderer, playerHeartTexture, nullptr, &dst);
         }
     } else {
-
         std::string hpText = "HP: ";
-        for (int i = 0; i < hearts; i++) {
-            hpText += "♥ ";
-        }
+        for (int i = 0; i < hearts; i++) hpText += "♥ ";
 
         SDL_Surface* surf = TTF_RenderText_Solid(font, hpText.c_str(), white);
         if (surf) {
             SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surf);
-            SDL_Rect dst = { xOffset, yOffset, surf->w, surf->h };
+            SDL_Rect dst = { screenW - surf->w - 20, yOffset, surf->w, surf->h };
             SDL_RenderCopy(renderer, tex, nullptr, &dst);
             SDL_FreeSurface(surf);
             SDL_DestroyTexture(tex);
         }
     }
-
-
     int seconds = static_cast<int>(elapsedTime / 1000.0);
     std::string timeText  = "Time: " + std::to_string(seconds) + " Sec";
     std::string scoreText = "Score: " + std::to_string(player.score);
@@ -982,24 +994,18 @@ void Engine::renderHUD() {
             return;
         }
 
-        int screenW, screenH;
-        SDL_GetRendererOutputSize(renderer, &screenW, &screenH);
-
-        SDL_Rect dst;
-        dst.w = surf->w;
-        dst.h = surf->h;
-        dst.x = screenW - dst.w - 20; 
-        dst.y = y;
-
+        SDL_Rect dst = { screenW - surf->w - 20, y, surf->w, surf->h };
         SDL_RenderCopy(renderer, tex, nullptr, &dst);
 
         SDL_FreeSurface(surf);
         SDL_DestroyTexture(tex);
     };
 
+    // Render below hearts
     renderText(timeText, yOffset + 40);
     renderText(scoreText, yOffset + 70);
 }
+
 
 
 void Engine::renderPauseMenu() {

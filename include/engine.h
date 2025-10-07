@@ -132,6 +132,7 @@ public:
     SDL_Texture* playerHeartTexture;
     SDL_Texture* playerBulletTexture;
     SDL_Texture* enemyBulletTexture;
+    SDL_Texture* obstacleTexture;
 
     bool init();
     void handleEvents();
