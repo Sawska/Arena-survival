@@ -4,7 +4,7 @@
 
 
 Enemy::Enemy(int startX, int startY, int health, int dmg, float renderScale)
-    : x(startX), y(startY), hp(health), damage(dmg), scale(renderScale)
+    : x(startX), y(startY), hp(health), damage(1), scale(renderScale)
 {}
 
 void Enemy::moveTowards(int targetX, int targetY)
@@ -21,7 +21,7 @@ bool Enemy::hitPlayer(const Player& player) {
     int scaledHeight = static_cast<int>(height);
 
     if (checkCollision(x, y, scaledWidth, scaledHeight,
-                       player.x, player.y, player.width, player.height)) {
+                       player.x, player.y, player.width/2, player.height/2)) {
         die();
         return true;
     }

@@ -2,7 +2,7 @@
 #include <cmath>
 
 RangedEnemy::RangedEnemy(int startX, int startY, std::vector<Bullet>* bullets)
-    : Enemy(startX, startY, 30, 10,3.0f), enemyBullets(bullets) {}
+    : Enemy(startX, startY, 30, 1,3.0f), enemyBullets(bullets) {}
 
 void RangedEnemy::moveTowards(int playerX, int playerY) {
 
@@ -21,7 +21,7 @@ void RangedEnemy::moveTowards(int playerX, int playerY) {
         if (len != 0) {
             float vx = dx / len * 5.0f;
             float vy = dy / len * 5.0f;
-            enemyBullets->push_back(Bullet(x, y, vx, vy, 5));
+            enemyBullets->push_back(Bullet(x, y, vx, vy, 5, 20, BulletType::NORMAL));
             cooldown = 60; 
         }
     }

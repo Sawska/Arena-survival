@@ -1,24 +1,33 @@
 #ifndef BULLET_H
 #define BULLET_H
 
+enum class BulletType {
+    NORMAL,
+    PIERCING,
+    GRENADE
+};
+
 class Bullet {
 public:
     float x, y;
     float vx, vy;
     int damage;
-    bool alive;
-    bool isEnemy;
-    int width = 15;
-    int height = 15;
+    int width, height;
+    bool alive = true;
+    bool isEnemy = false;
+    BulletType type = BulletType::NORMAL;
 
-    bool piercing = false; 
-    bool isGrenade = false; 
+
+    float lifetime = 5.0f;     
+    float explosionRadius = 0.0f; 
+    int piercesLeft = 1;       
+
 
     Bullet(float startX, float startY, float velocityX, float velocityY,
-           int dmg = 10, int size = 5, bool enemyBullet = false,
-           bool piercingBullet = false, bool grenade = false);
+           int dmg, int size, BulletType bulletType = BulletType::NORMAL);
 
     void update();
+    void onHit();                
     void kill();
 };
 

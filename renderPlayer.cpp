@@ -7,7 +7,7 @@
 RenderPlayer::RenderPlayer(Player* p) : player(p), texture(nullptr) {}
 
 void RenderPlayer::loadTexture(SDL_Renderer* renderer) {
-    SDL_Surface* surface = IMG_Load("assets/DO Monsters/Monsters/BarbarianPriest.PNG");
+    SDL_Surface* surface = IMG_Load("assets/BarbarianPriest.PNG");
     if (!surface) {
         std::cerr << "Failed to load player surface: " << IMG_GetError() << std::endl;
         return;

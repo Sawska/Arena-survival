@@ -18,10 +18,10 @@ public:
 
 
     void loadTextures(SDL_Renderer* renderer) {
-        textures["normal"] = loadTexture("assets/DO Monsters/Monsters/Zombie.PNG", renderer);
-        textures["fast"]   = loadTexture("assets/DO Monsters/Monsters/Wolf.PNG", renderer);
-        textures["tank"]   = loadTexture("assets/DO Monsters/Monsters/TrollFighter.PNG", renderer);
-        textures["ranged"] = loadTexture("assets/DO Monsters/Monsters/SkeletonMage.PNG", renderer);
+        textures["normal"] = loadTexture("assets/Zombie.PNG", renderer);
+        textures["fast"]   = loadTexture("assets/Wolf.PNG", renderer);
+        textures["tank"]   = loadTexture("assets/TrollFighter.PNG", renderer);
+        textures["ranged"] = loadTexture("assets/SkeletonMage.PNG", renderer);
     }
 
 private:

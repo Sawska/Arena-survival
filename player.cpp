@@ -3,17 +3,12 @@
 #include <cmath>
 
 Player::Player(int startX, int startY)
-    : x(startX), y(startY), hp(100), score(0) {}
+    : x(startX), y(startY), hp(3), score(0) {}
 
 
 void Player::move(int dx, int dy, int worldWidth, int worldHeight) {
     x += static_cast<int>(dx * moveSpeed);
     y += static_cast<int>(dy * moveSpeed);
-
-    // if (x < 0) x += worldWidth;
-    // if (x >= worldWidth) x -= worldWidth;
-    // if (y < 0) y += worldHeight;
-    // if (y >= worldHeight) y -= worldHeight;
 }
 
 
@@ -157,69 +152,45 @@ std::vector<PlayerSkill> Player::getRandomSkillChoices() {
 std::vector<Bullet> Player::shoot(int targetX, int targetY) {
     std::vector<Bullet> shots;
 
-    float offsetX = 0.0f;   
-    float offsetY = -10.0f;
-
-    float centerX = x + width / 2.0f + offsetX;
-    float centerY = y + height / 2.0f + offsetY;
-
+    float centerX = x + width / 2.0f;
+    float centerY = y + height / 2.0f;
     float dx = targetX - centerX;
     float dy = targetY - centerY;
     float length = sqrt(dx * dx + dy * dy);
     if (length == 0) return shots;
-
     float vx = dx / length * bulletSpeed;
     float vy = dy / length * bulletSpeed;
 
+    BulletType primaryType = BulletType::NORMAL;
     if (hasLaser) {
-        shots.emplace_back(centerX, centerY, vx * 9999, vy * 9999,
-                           bulletDamage * 2, bulletSize * 4,
-                           false, true, false);
-        return shots;
+        primaryType = BulletType::PIERCING;
+    } else if (hasGrenade) {
+        primaryType = BulletType::GRENADE;
     }
 
-    if (hasGrenade) {
-        shots.emplace_back(centerX, centerY, vx, vy,
-                           bulletDamage * 3, bulletSize * 2,
-                           false, false, true);
-        return shots;
-    }
 
-    shots.emplace_back(centerX, centerY, vx, vy,
-                       bulletDamage, bulletSize,
-                       false, false, false);
+    shots.emplace_back(centerX, centerY, vx, vy, bulletDamage, bulletSize, primaryType);
 
     for (int i = 0; i < extraShots; ++i) {
-        shots.emplace_back(centerX, centerY, vx, vy,
-                           bulletDamage, bulletSize,
-                           false, false, false);
+        shots.emplace_back(centerX, centerY, vx, vy, bulletDamage, bulletSize, primaryType);
     }
 
+
     if (diagonalShots) {
-        shots.emplace_back(centerX, centerY, vx, -vy,
-                           bulletDamage, bulletSize,
-                           false, false, false);
-        shots.emplace_back(centerX, centerY, -vx, vy,
-                           bulletDamage, bulletSize,
-                           false, false, false);
+        shots.emplace_back(centerX, centerY, vx, -vy, bulletDamage, bulletSize, primaryType);
+        shots.emplace_back(centerX, centerY, -vx, vy, bulletDamage, bulletSize, primaryType);
     }
 
     if (shotgun) {
-        float spread = 0.3f; 
+        float spread = 0.3f;
         float cosA = cos(spread), sinA = sin(spread);
-
         float vx1 = vx * cosA - vy * sinA;
         float vy1 = vx * sinA + vy * cosA;
-
         float vx2 = vx * cosA + vy * sinA;
         float vy2 = -vx * sinA + vy * cosA;
 
-        shots.emplace_back(centerX, centerY, vx1, vy1,
-                           bulletDamage, bulletSize,
-                           false, false, false);
-        shots.emplace_back(centerX, centerY, vx2, vy2,
-                           bulletDamage, bulletSize,
-                           false, false, false);
+        shots.emplace_back(centerX, centerY, vx1, vy1, bulletDamage, bulletSize, primaryType);
+        shots.emplace_back(centerX, centerY, vx2, vy2, bulletDamage, bulletSize, primaryType);
     }
 
     return shots;

@@ -59,6 +59,9 @@ class Engine {
     std::vector<std::unique_ptr<Enemy>> enemies;   
      Spawner spawner;             
     RenderEnemy renderEnemy;
+
+    Uint32 levelUpStartTime = 0;
+
     
     std::vector<Bullet> bullets;
     RenderBullet renderBullet;

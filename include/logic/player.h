@@ -9,7 +9,7 @@
 class Player {
 public:
     int x, y;
-    int hp;
+    int hp=4;
     int score;
     bool isAlive = true;
 

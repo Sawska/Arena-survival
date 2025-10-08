@@ -1,6 +1,7 @@
 #include "engine.h"
 #include <iostream>
 #include <algorithm>
+#include <sstream>
 
 Engine::Engine()
     : window(nullptr), renderer(nullptr),
@@ -60,7 +61,7 @@ if (!(IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG)) {
   
     bullets.reserve(100);
     enemies.reserve(50);
-        font = TTF_OpenFont("assets/kenney_ui-pack/Font/Kenney Future Narrow.ttf", 24);
+        font = TTF_OpenFont("assets/Kenney Future Narrow.ttf", 24);
     if (!font) {
         std::cout << "Font load error: " << TTF_GetError() << std::endl;
         return false;
@@ -76,7 +77,7 @@ if (!(IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG)) {
     pauseButtons.push_back(Button(300, 200, 200, 50, "Resume", {0,255,0}, {50,255,50}, font));
     pauseButtons.push_back(Button(300, 300, 200, 50, "Exit", {255,0,0}, {255,50,50}, font));
 
-SDL_Surface* bgSurface = IMG_Load("assets/Dungeon Crawl Stone Soup Full/dungeon/floor/grass/grass_0_old.png");
+SDL_Surface* bgSurface = IMG_Load("assets/grass_0_old.png");
 if (!bgSurface) {
     std::cout << "Failed to load background image: " << IMG_GetError() << std::endl;
     return false;
@@ -111,13 +112,15 @@ playerBulletTexture = SDL_CreateTextureFromSurface(renderer, surface);
 SDL_FreeSurface(surface);
 
 
-SDL_Surface* obstacbleSurface = IMG_Load("assets/Dungeon Crawl Stone Soup Full/dungeon/trees/tree_1_red.png");
+SDL_Surface* obstacbleSurface = IMG_Load("assets/tree_1_red.png");
 if (!obstacbleSurface) {
     std::cerr << "Failed to load obstacle surface: " << IMG_GetError() << std::endl;
 }
 SDL_SetColorKey(obstacbleSurface, SDL_TRUE, SDL_MapRGB(obstacbleSurface->format, 255, 0, 255));
 
 obstacleTexture = SDL_CreateTextureFromSurface(renderer, obstacbleSurface);
+
+SDL_FreeSurface(obstacbleSurface);
 
 
 SDL_Surface* surface_enemy = IMG_Load("assets/enemy_bullet.png");
@@ -213,7 +216,7 @@ void Engine::handleEvents() {
                                 loadedChunks.clear();
                                 generatedChunks.clear();
                                 obstacles.clear();
-                                obstacles = obstacleSpawner.spawnRandomObstacles(10, worldWidth, worldHeight, 30, 60);
+                                obstacles = obstacleSpawner.spawnRandomObstacles(10, worldWidth, worldHeight, 35, 60);
                                 elapsedTime = 0;
                                 state = GameState::RUNNING;
                             } else if (btn.getText() == "Exit") {
@@ -225,6 +228,7 @@ void Engine::handleEvents() {
                 break;
 
             case GameState::RUNNING:
+            levelUpStartTime = 0;
                 if (mousePressed && event.type == SDL_MOUSEBUTTONDOWN) {
                     int worldMouseX = mouseX + camera.x;
                     int worldMouseY = mouseY + camera.y;
@@ -325,7 +329,7 @@ ChunkCoord currentChunk{playerChunkX, playerChunkY};
 
 
 if (generatedChunks.find(currentChunk) == generatedChunks.end()) {
-    generatedChunks[currentChunk] = obstacleSpawner.spawnRandomObstacles(10, chunkSize, chunkSize, 50, 150);
+    generatedChunks[currentChunk] = obstacleSpawner.spawnRandomObstacles(10, chunkSize, chunkSize, 90, 150);
 
     for (auto& obs : generatedChunks[currentChunk]) {
         obs.x += playerChunkX * chunkSize;
@@ -354,7 +358,7 @@ for (auto& bullet : bullets) {
         if (enemy->alive && enemy->hitByBullet(bullet)) {
             enemy->takeDamage(bullet.damage);
 
-            if (bullet.isGrenade) {
+            if (bullet.type == BulletType::GRENADE) {
                 float explosionRadius = 100.0f;
                 for (auto& aoeEnemy : enemies) {
                     float dx = aoeEnemy->x - bullet.x;
@@ -367,7 +371,7 @@ for (auto& bullet : bullets) {
                 bullet.kill(); 
                 break; 
             }
-            else if (!bullet.piercing) {
+            else  {
 
                 bullet.kill();
                 break;
@@ -810,12 +814,12 @@ float lerp(float a, float b, float t) {
 
 
 void Engine::loadGUITextures() {
-    guiTextures["panel"] = IMG_LoadTexture(renderer, "assets/kenney_ui-pack/PNG/Blue/Default/button_square_gloss.png");
-    guiTextures["panel_pause"] = IMG_LoadTexture(renderer, "assets/kenney_ui-pack/PNG/Greey/Default/button_square_gloss.png");
-    guiTextures["panel_gameover"] = IMG_LoadTexture(renderer, "assets/kenney_ui-pack/PNG/Red/Default/button_square_gloss.png");
-    guiTextures["button"] = IMG_LoadTexture(renderer, "assets/kenney_ui-pack/PNG/Greey/Default/button_rectangle_gloss.png");
-    guiTextures["button_pause"] = IMG_LoadTexture(renderer, "assets/kenney_ui-pack/PNG/Blue/Default/button_rectangle_gloss.png");
-    guiTextures["button_gameover"] = IMG_LoadTexture(renderer, "assets/kenney_ui-pack/PNG/Blue/Default/button_rectangle_gloss.png");
+    guiTextures["panel"] = IMG_LoadTexture(renderer, "assets/Blue/button_square_gloss.png");
+    guiTextures["panel_pause"] = IMG_LoadTexture(renderer, "assets/Greey/button_square_gloss.png");
+    guiTextures["panel_gameover"] = IMG_LoadTexture(renderer, "assets/button_square_gloss.png");
+    guiTextures["button"] = IMG_LoadTexture(renderer, "assets/Greey/button_rectangle_gloss.png");
+    guiTextures["button_pause"] = IMG_LoadTexture(renderer, "assets/Blue/button_rectangle_gloss.png");
+    guiTextures["button_gameover"] = IMG_LoadTexture(renderer, "assets/Blue/button_rectangle_gloss.png");
     
 
 
@@ -925,6 +929,11 @@ void Engine::renderLevelUpScreen() {
 
 
 void Engine::handleLevelUpEvent(SDL_Event& e) {
+
+    if (SDL_GetTicks() - levelUpStartTime < 5000) {
+        return; 
+    }
+
     if (e.type == SDL_MOUSEBUTTONDOWN) {
         int mx = e.button.x;
         int my = e.button.y;
@@ -948,7 +957,7 @@ void Engine::handleLevelUpEvent(SDL_Event& e) {
 void Engine::renderHUD() {
     SDL_Color white = {255, 255, 255, 255};
 
-    int hearts = player.hp / 20;
+    int hearts = player.hp;
     int yOffset = 20;
 
     int screenW, screenH;
@@ -1001,7 +1010,6 @@ void Engine::renderHUD() {
         SDL_DestroyTexture(tex);
     };
 
-    // Render below hearts
     renderText(timeText, yOffset + 40);
     renderText(scoreText, yOffset + 70);
 }
@@ -1035,18 +1043,32 @@ void Engine::renderPauseMenu() {
         SDL_DestroyTexture(tex);
 
         int seconds = static_cast<int>(elapsedTime / 1000);
-        std::string infoText = "Level: " + std::to_string(player.level) +
-                               " | Score: " + std::to_string(player.score) +
-                               " | Time: " + std::to_string(seconds) + "s";
+        
+        std::string infoText = "Level: " + std::to_string(player.level) + 
+                       "\nScore: " + std::to_string(player.score) + 
+                       "\nTime: " + std::to_string(static_cast<int>(elapsedTime / 1000));
 
-        SDL_Surface* surf2 = TTF_RenderText_Solid(font, infoText.c_str(), white);
-        SDL_Texture* tex2 = SDL_CreateTextureFromSurface(renderer, surf2);
-        SDL_Rect dst2 {panel.x + 20, panel.y + 60, surf2->w, surf2->h};
-        SDL_RenderCopy(renderer, tex2, nullptr, &dst2);
-        SDL_FreeSurface(surf2);
-        SDL_DestroyTexture(tex2);
+int textX = panel.x + 20;
+int textY = panel.y + 60;
+
+std::stringstream ss(infoText);
+std::string line;
+
+while (std::getline(ss, line)) {
+    SDL_Surface* lineSurf = TTF_RenderText_Solid(font, line.c_str(), white);
+    SDL_Texture* lineTex = SDL_CreateTextureFromSurface(renderer, lineSurf);
+
+    SDL_Rect dstLine = { textX, textY, lineSurf->w, lineSurf->h };
+    SDL_RenderCopy(renderer, lineTex, nullptr, &dstLine);
+
+    textY += lineSurf->h + 5; 
+
+    SDL_FreeSurface(lineSurf);
+    SDL_DestroyTexture(lineTex);
+}
+
     }
-    int btnY = panel.y + 120;
+    int btnY = panel.y + 150;
     for (auto& btn : pauseButtons) {
         btn.rect.x = panel.x + (panel.w - btn.rect.w)/2;
         btn.rect.y = btnY;
