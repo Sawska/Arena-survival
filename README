@@ -1,34 +1,138 @@
 # ARENA-GAME
 
-**ARENA-GAME** is a portfolio project showcasing a fast-paced arena survival game powered by a custom C++ game engine. Fight off waves of enemies, upgrade your hero, and master a dynamic skill tree — all built from the ground up to demonstrate modern engine architecture and gameplay systems.
+**ARENA-GAME** is a portfolio project showcasing a fast-paced, arcade-style arena survival game. Fight off endless waves of enemies, level up your hero, and choose from a variety of powerful, procedurally-offered skills to create a unique build in every run. The game is powered by a custom C++ game engine built from the ground up using SDL2.
 
----
+-----
+
+## 🕹️ How to Play
+
+  * **Move:** Use `W`, `A`, `S`, `D` keys to move your character.
+  * **Aim & Shoot:** Aim your cursor at enemies and `Left-Click` to fire projectiles.
+  * **Level Up:** Defeat enemies to gain experience. When you level up, the game will pause, allowing you to choose one of three powerful passive upgrades.
+  * **Survive:** The goal is to survive for as long as possible against increasingly difficult hordes of enemies\!
+
+-----
+
+## ✨ Key Features
+
+  - **Infinite Procedural World:** The game world is generated infinitely in chunks as the player explores, complete with randomly placed obstacles.
+  - **Dynamic Skill System:** Upon leveling up, players are presented with three random skill choices, making every run unique. Implemented skills include `Double Shot`, `Laser Beam`, `Power Shot`, `Smaller Frame`, and more.
+  - **Variety of Enemies:** A robust spawner system populates the world with different enemy archetypes, including fast melee attackers, durable tanks, and ranged units.
+  - **Custom 2D Game Engine:** Built using an Object-Oriented architecture, the engine features:
+      - A sprite-based rendering system using the **SDL2 Renderer API**.
+      - A smooth, interpolating **Camera** that follows the player.
+      - A **Game State Manager** to handle menus, gameplay, pausing, and game over screens.
+      - An event loop for handling player input for movement, shooting, and UI interaction.
+  - **Complete UI Suite:** Fully functional UI screens for the Main Menu, Pause Menu (with volume controls), Level Up choices, and Game Over summary, rendered using `SDL2_ttf`.
+  - **Resource and Audio Management:** The engine loads and manages textures (`SDL2_image`), sound effects, and background music (`SDL2_mixer`).
+
+-----
 
 ## 🛠 Tech Stack
 
-- **Language:** C++20
-- **Graphics/Windowing:** SDL2 or SFML *(final decision pending)*
-- **Rendering Backend:** OpenGL *(Vulkan optional, time permitting)*
-- **Build System:** CMake
-- **Version Control:** Git + GitHub
+  - **Language:** C++17
+  - **Libraries:**
+      - **SDL2:** For windowing, input, and accelerated 2D rendering.
+      - **SDL2\_image:** For loading PNG textures.
+      - **SDL2\_ttf:** For rendering text and UI elements.
+      - **SDL2\_mixer:** For background music and sound effects.
+  - **Build System:** CMake
+  - **Version Control:** Git & GitHub
 
----
+-----
 
-## 🧩 Engine Features
+## ⚙️ Building and Running
 
-- [ ] **ECS (Entity-Component-System)** architecture
-- [ ] Custom 2D renderer (OpenGL-based)
-- [ ] Scene & level management
-- [ ] Input handling system
-- [ ] Resource loader & asset manager (textures, audio, config)
-- [ ] Audio playback support
+### Prerequisites
 
----
+  - A C++17 compliant compiler (GCC, Clang, MSVC).
+  - CMake (version 3.10 or higher).
+  - Git for cloning the repository.
+  - The required **SDL2 development libraries**.
 
-## 🧪 Gameplay Features
+#### Installing Dependencies
 
-- [ ] Playable hero with upgradeable skills
-- [ ] Combat mechanics: ranged, melee, projectiles
-- [ ] Skill tree UI and progression logic
+Here's how to install the necessary libraries on common systems:
 
----
+  * **Debian / Ubuntu / Linux Mint (APT):**
+
+    ```bash
+    sudo apt-get update
+    sudo apt-get install -y libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev libsdl2-mixer-dev
+    ```
+
+  * **Arch Linux (Pacman):**
+
+    ```bash
+    sudo pacman -Syu
+    sudo pacman -S sdl2 sdl2_image sdl2_ttf sdl2_mixer
+    ```
+
+  * **macOS (Homebrew):**
+
+    ```bash
+    brew install sdl2 sdl2_image sdl2_ttf sdl2_mixer
+    ```
+
+  * **Windows (vcpkg):**
+    For Windows, it's recommended to use a package manager like [vcpkg](https://github.com/microsoft/vcpkg). Once installed, you can get the libraries by running:
+
+    ```bash
+    vcpkg install sdl2 sdl2-image sdl2-ttf sdl2-mixer
+    ```
+
+### Build Steps
+
+1.  **Clone the repository:**
+
+    ```bash
+    git clone https://github.com/your-username/ARENA-GAME.git
+    cd ARENA-GAME
+    ```
+
+2.  **Create a build directory:**
+
+    ```bash
+    mkdir build
+    cd build
+    ```
+
+3.  **Configure the project with CMake:**
+    *(If you used vcpkg on Windows, you need to add the toolchain file path to this command)*
+
+    ```bash
+    # For Linux/macOS
+    cmake ..
+
+    # For Windows with vcpkg
+    # cmake .. -DCMAKE_TOOLCHAIN_FILE=[path\to\vcpkg]\scripts\buildsystems\vcpkg.cmake
+    ```
+
+4.  **Compile the project:**
+
+    ```bash
+    make
+    ```
+
+    *(On Windows, you can use `cmake --build .` or open the generated `.sln` file in Visual Studio and build)*
+
+5.  **Run the game:**
+    The `assets` folder will be automatically copied into the build directory. You can run the executable directly from there.
+
+    ```bash
+    ./GameEngine
+    ```
+
+-----
+
+6. **Screenshots**
+
+![alt text](image.png)
+
+
+![alt text](image-1.png)
+
+
+![alt text](image-2.png)
+-----
+

@@ -47,7 +47,6 @@ void Enemy::takeDamage(int damage) {
         hp = 0;
     }
 
-    std::cout << "Enemy took " << damage << " damage, HP left: " << hp << std::endl;
 }
 
 void Enemy::die() {

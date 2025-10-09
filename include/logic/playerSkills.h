@@ -15,7 +15,6 @@ enum class PlayerSkillType {
     DIAGONAL_SHOTS,
     SMALLER_BODY,
     LASER,      
-    GRENADE      
 };
 
 

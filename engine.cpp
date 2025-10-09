@@ -19,18 +19,15 @@ Engine::~Engine() {
 
 bool Engine::init() {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-        std::cout << "SDL Init Error: " << SDL_GetError() << std::endl;
         return false;
     }
 
     if (TTF_Init() < 0) {
-        std::cout << "TTF Init Error: " << TTF_GetError() << std::endl;
         return false;
     }
 
 if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
-    std::cout << "SDL_mixer could not initialize! Error: "
-              << Mix_GetError() << std::endl;
+
     return false;
 }
 
@@ -49,13 +46,11 @@ if (!(IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG)) {
                               SDL_WINDOWPOS_CENTERED,
                               800, 600, SDL_WINDOW_SHOWN);
     if (!window) {
-        std::cout << "Window Error: " << SDL_GetError() << std::endl;
         return false;
     }
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
     if (!renderer) {
-        std::cout << "Renderer Error: " << SDL_GetError() << std::endl;
         return false;
     }
   
@@ -63,7 +58,6 @@ if (!(IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG)) {
     enemies.reserve(50);
         font = TTF_OpenFont("assets/Kenney Future Narrow.ttf", 24);
     if (!font) {
-        std::cout << "Font load error: " << TTF_GetError() << std::endl;
         return false;
     }
 
@@ -79,7 +73,6 @@ if (!(IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG)) {
 
 SDL_Surface* bgSurface = IMG_Load("assets/grass_0_old.png");
 if (!bgSurface) {
-    std::cout << "Failed to load background image: " << IMG_GetError() << std::endl;
     return false;
 }
 
@@ -100,7 +93,6 @@ SDL_FreeSurface(bgSurface);
 
 SDL_Surface* surface = IMG_Load("assets/image.png");
 if (!surface) {
-    std::cerr << "Failed to load bullet surface: " << IMG_GetError() << std::endl;
 }
 
 
@@ -114,7 +106,6 @@ SDL_FreeSurface(surface);
 
 SDL_Surface* obstacbleSurface = IMG_Load("assets/tree_1_red.png");
 if (!obstacbleSurface) {
-    std::cerr << "Failed to load obstacle surface: " << IMG_GetError() << std::endl;
 }
 SDL_SetColorKey(obstacbleSurface, SDL_TRUE, SDL_MapRGB(obstacbleSurface->format, 255, 0, 255));
 
@@ -125,25 +116,27 @@ SDL_FreeSurface(obstacbleSurface);
 
 SDL_Surface* surface_enemy = IMG_Load("assets/enemy_bullet.png");
 if (!surface_enemy) {
-    std::cerr << "Failed to load bullet surface: " << IMG_GetError() << std::endl;
 }
-enemyBulletTexture  = SDL_CreateTextureFromSurface(renderer, surface_enemy);
+
 
 SDL_SetColorKey(surface_enemy, SDL_TRUE, SDL_MapRGB(surface_enemy->format, 255, 0, 255));
 
-
-if (!playerBulletTexture || !enemyBulletTexture) {
-    std::cerr << "Failed to create bullet textures: " << SDL_GetError() << std::endl;
-}
-
+enemyBulletTexture  = SDL_CreateTextureFromSurface(renderer, surface_enemy);
 
 
 SDL_FreeSurface(surface_enemy);
 
+
+
+
+if (!playerBulletTexture || !enemyBulletTexture) {
+}
+
+
+
 SDL_Surface* heartSurface = IMG_Load("assets/heart.png");
 
 if (!heartSurface) {
-    std::cerr << "Failed to load heart surface: " << IMG_GetError() << std::endl;
     return false;
 }
 
@@ -152,7 +145,6 @@ SDL_SetColorKey(heartSurface, SDL_TRUE, SDL_MapRGB(heartSurface->format, 255, 0,
 playerHeartTexture = SDL_CreateTextureFromSurface(renderer, heartSurface);
 
 if(!playerHeartTexture) {
-    std::cerr << "Failed to create heart texture: " << SDL_GetError() << std::endl;
     SDL_FreeSurface(heartSurface);
     return false;
 }
@@ -347,7 +339,6 @@ if (generatedChunks.find(currentChunk) == generatedChunks.end()) {
         if (enemy->hitPlayer(player)) {
             playSound("hit", 0);
             player.takeDamage(enemy->damage);
-            std::cout << "Player hit! HP: " << player.hp << std::endl;
         }
     }
 
@@ -358,25 +349,24 @@ for (auto& bullet : bullets) {
         if (enemy->alive && enemy->hitByBullet(bullet)) {
             enemy->takeDamage(bullet.damage);
 
-            if (bullet.type == BulletType::GRENADE) {
-                float explosionRadius = 100.0f;
-                for (auto& aoeEnemy : enemies) {
-                    float dx = aoeEnemy->x - bullet.x;
-                    float dy = aoeEnemy->y - bullet.y;
-                    float dist2 = dx*dx + dy*dy;
-                    if (aoeEnemy->alive && dist2 < explosionRadius * explosionRadius) {
-                        aoeEnemy->takeDamage(bullet.damage / 2); 
+            switch (bullet.type) {
+                case BulletType::PIERCING:
+                    bullet.piercesLeft--; 
+                    if (bullet.piercesLeft <= 0) {
+                        bullet.kill();
                     }
-                }
-                bullet.kill(); 
+                  
+                    break; 
+
+                case BulletType::NORMAL:
+                default:
+                    bullet.kill(); 
+                    break; 
+            }
+
+            if (!bullet.alive) {
                 break; 
             }
-            else  {
-
-                bullet.kill();
-                break;
-            }
-
         }
     }
 }
@@ -422,7 +412,6 @@ for (auto& b : enemyBullets) {
             int points = (*it)->getScoreValue();
             player.addScore(points);
             playSound("enemy_death", 0);
-            std::cout << "Enemy defeated! Score: " << player.score << std::endl;
             it = enemies.erase(it);
         } else {
             ++it;
@@ -436,7 +425,6 @@ for (auto& b : enemyBullets) {
 
     if(player.isDead()) {
         finalElapsedTime = elapsedTime;
-        std::cout << "Game Over! Final Score: " << player.score << std::endl;
         state = GameState::GAME_OVER;
     }
 }
@@ -492,12 +480,12 @@ for (int dx = -renderDistance; dx <= renderDistance; dx++) {
     }
 
     for (auto& bullet : bullets) {
-        renderBullet.draw(bullet, renderer, camera, worldWidth, worldHeight,playerBulletTexture, enemyBulletTexture);
+        renderBullet.draw(bullet, renderer, camera, worldWidth, worldHeight,playerBulletTexture, enemyBulletTexture, player.bulletSize);
     }
 
     for (auto& b : enemyBullets) {
         b.isEnemy = true;
-    renderBullet.draw(b, renderer,camera, worldWidth, worldHeight,playerBulletTexture, enemyBulletTexture);
+    renderBullet.draw(b, renderer,camera, worldWidth, worldHeight,playerBulletTexture, enemyBulletTexture,0);
 }
 
     for(const auto& obstacle : obstacles) {
@@ -549,7 +537,6 @@ void Engine::run() {
 
      Mix_Volume(-1, MIX_MAX_VOLUME);
 
-std::cout << "State: " << state << std::endl;
 
 
 
@@ -585,6 +572,8 @@ std::cout << "State: " << state << std::endl;
     }
     previousState = state;
 }
+
+
 
 
     switch (state) {
@@ -826,7 +815,7 @@ void Engine::loadGUITextures() {
 
     for (auto& [key, tex] : guiTextures) {
         if (!tex) {
-            std::cerr << "Failed to load GUI texture " << key << ": " << IMG_GetError() << std::endl;
+
         }
     }
 }
@@ -992,13 +981,11 @@ void Engine::renderHUD() {
     auto renderText = [&](const std::string& text, int y) {
         SDL_Surface* surf = TTF_RenderText_Solid(font, text.c_str(), white);
         if (!surf) {
-            std::cerr << "TTF_RenderText_Solid failed: " << TTF_GetError() << std::endl;
             return;
         }
 
         SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surf);
         if (!tex) {
-            std::cerr << "SDL_CreateTextureFromSurface failed: " << SDL_GetError() << std::endl;
             SDL_FreeSurface(surf);
             return;
         }
@@ -1141,71 +1128,62 @@ while (std::getline(ss, line)) {
 
 void Engine::loadAudio() {
     if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
-        std::cerr << "SDL_mixer could not initialize! SDL_mixer Error: "
-                  << Mix_GetError() << std::endl;
+
         return;
     }
 
     Mix_Music* bgMusic = Mix_LoadMUS("assets/audio/background_music.mp3");
     if (!bgMusic) {
-        std::cerr << "Failed to load background music! Error: "
-                  << Mix_GetError() << std::endl;
+
     } else {
         musicTracks["background"] = bgMusic;
     }
 
     Mix_Music* menuMusic = Mix_LoadMUS("assets/audio/menu_music.mp3");
     if (!menuMusic) {
-        std::cerr << "Failed to load menu music! Error: "
-                  << Mix_GetError() << std::endl;
+
     } else {
         musicTracks["menu_music"] = menuMusic;
     }
 
     Mix_Music* gameOverMusic = Mix_LoadMUS("assets/audio/game_over_music.mp3");
     if (!gameOverMusic) {
-        std::cerr << "Failed to load game over music! Error: "
-                  << Mix_GetError() << std::endl;
+
     } else {
         musicTracks["game_over_music"] = gameOverMusic;
     }
 
     Mix_Chunk* shoot = Mix_LoadWAV("assets/audio/shoot.wav");
     if (!shoot) {
-        std::cerr << "Failed to load shoot sound! Error: "
-                  << Mix_GetError() << std::endl;
+
     } else {
         soundEffects["shoot"] = shoot;
     }
 
     Mix_Chunk* hit = Mix_LoadWAV("assets/audio/hit.wav");
     if (!hit) {
-        std::cerr << "Failed to load hit sound! Error: "
-                  << Mix_GetError() << std::endl;
+
     } else {
         soundEffects["hit"] = hit;
     }
 
     Mix_Chunk* enemyDeath = Mix_LoadWAV("assets/audio/enemy_death.wav");
     if (!enemyDeath) {
-        std::cerr << "Failed to load enemy death sound! Error: "
-                  << Mix_GetError() << std::endl;
+
     } else {
         soundEffects["enemy_death"] = enemyDeath;
     }
 
     Mix_Chunk* gameOverSound = Mix_LoadWAV("assets/audio/game_over.wav");
     if (!gameOverSound) {
-        std::cerr << "Failed to load game over sound! Error: "
-                  << Mix_GetError() << std::endl;
+
     } else {
         soundEffects["game_over"] = gameOverSound;
     }
 
     Mix_Chunk* levelUp = Mix_LoadWAV("assets/audio/level_up.wav");
     if (!levelUp) {
-        std::cerr << "Failed to load level up sound! Error: "
-                  << Mix_GetError() << std::endl;
+
     } else {
         soundEffects["level_up"] = levelUp;
     }
@@ -1216,10 +1194,8 @@ void Engine::playMusic(const std::string& id, int loops) {
     auto it = musicTracks.find(id);
     if (it != musicTracks.end()) {
     if (Mix_PlayMusic(it->second, loops) == -1) {
-        std::cerr << "Mix_PlayMusic failed for " << id 
-                  << "! Error: " << Mix_GetError() << std::endl;
+     
     } else {
-        std::cout << "Playing music: " << id << std::endl;
     }
 }
 

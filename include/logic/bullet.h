@@ -4,7 +4,6 @@
 enum class BulletType {
     NORMAL,
     PIERCING,
-    GRENADE
 };
 
 class Bullet {
@@ -26,8 +25,7 @@ public:
     Bullet(float startX, float startY, float velocityX, float velocityY,
            int dmg, int size, BulletType bulletType = BulletType::NORMAL);
 
-    void update();
-    void onHit();                
+    void update();                
     void kill();
 };
 

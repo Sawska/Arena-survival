@@ -42,7 +42,6 @@ void Player::addExp(int amount) {
     while (exp >= expToNextLevel(level)) { 
         exp -= expToNextLevel(level);
         level++;
-        std::cout << "Level Up! New level: " << level << std::endl;
     }
 }
 
@@ -53,12 +52,19 @@ int Player::expToNextLevel(int currentLevel) const {
 }
 
 
-
 bool Player::checkCollision(Bullet& bullet) {
-    return x < bullet.x + bullet.width &&
-           x + width > bullet.x &&
-           y < bullet.y + bullet.height &&
-           y + height > bullet.y;
+    float playerLeft = x;
+    float playerRight = x + width; 
+    float playerTop = y;
+    float playerBottom = y + height; 
+
+    float bulletLeft = bullet.x;
+    float bulletRight = bullet.x + bullet.width;
+    float bulletTop = bullet.y;
+    float bulletBottom = bullet.y + bullet.height;
+
+    return (playerLeft < bulletRight && playerRight > bulletLeft &&
+            playerTop < bulletBottom && playerBottom > bulletTop);
 }
 
 
@@ -68,7 +74,7 @@ void Player::applySkill(const PlayerSkill& skill) {
 
     switch(skill.type) {
         case PlayerSkillType::INCREASE_BULLET_DAMAGE:
-            bulletDamage += 5;
+            bulletDamage += 25;
             break;
         case PlayerSkillType::INCREASE_BULLET_SPEED:
             bulletSpeed += 2.0f;
@@ -77,13 +83,13 @@ void Player::applySkill(const PlayerSkill& skill) {
             moveSpeed += 1;
             break;
         case PlayerSkillType::EXTRA_HP:
-            hp += 20;
+            hp += 1;
             break;
         case PlayerSkillType::RAPID_FIRE:
             fireRateModifier *= 0.8f; 
             break;
         case PlayerSkillType::BIGGER_BULLETS:
-            bulletSize += 2;
+            bulletSize += 10;
             break;
         case PlayerSkillType::MULTIPLE_SHOTS:
             extraShots += 1; 
@@ -98,19 +104,16 @@ void Player::applySkill(const PlayerSkill& skill) {
             hasLaser = true;   
             break;
 
-        case PlayerSkillType::GRENADE:
-            hasGrenade = true;
-            break;
  
         case PlayerSkillType::SMALLER_BODY:
             if (width > 20 && height > 20) {
-                width -= 5;
-                height -= 5;
+                width -= 25;
+                height -= 25;
+
             }
             break;
     }
 
-    std::cout << "Skill gained: " << skill.name << std::endl;
 }
 
 
@@ -127,7 +130,6 @@ std::vector<PlayerSkill> Player::getRandomSkillChoices() {
         {PlayerSkillType::DIAGONAL_SHOTS, "Diagonal Shots", "Adds diagonal bullets"},
         {PlayerSkillType::SMALLER_BODY, "Small Frame", "Reduce player size"},
         {PlayerSkillType::LASER, "Laser Beam", "Shoot a piercing laser"},
-        {PlayerSkillType::GRENADE, "Grenade", "Launch an explosive grenade"}
 
     };
 
@@ -164,17 +166,20 @@ std::vector<Bullet> Player::shoot(int targetX, int targetY) {
     BulletType primaryType = BulletType::NORMAL;
     if (hasLaser) {
         primaryType = BulletType::PIERCING;
-    } else if (hasGrenade) {
-        primaryType = BulletType::GRENADE;
     }
-
 
     shots.emplace_back(centerX, centerY, vx, vy, bulletDamage, bulletSize, primaryType);
 
-    for (int i = 0; i < extraShots; ++i) {
-        shots.emplace_back(centerX, centerY, vx, vy, bulletDamage, bulletSize, primaryType);
+    float spreadAngle = 0.15f; 
+    for (int i = 1; i <= extraShots; ++i) {
+        float angle = spreadAngle * i;
+        float cosA = cos(angle);
+        float sinA = sin(angle);
+        float new_vx = vx * cosA - vy * sinA;
+        float new_vy = vx * sinA + vy * cosA;
+        
+        shots.emplace_back(centerX, centerY, new_vx, new_vy, bulletDamage, bulletSize, primaryType);
     }
-
 
     if (diagonalShots) {
         shots.emplace_back(centerX, centerY, vx, -vy, bulletDamage, bulletSize, primaryType);
