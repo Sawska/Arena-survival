@@ -13,13 +13,6 @@ Bullet::Bullet(float startX, float startY, float velocityX, float velocityY,
             piercesLeft = 5; 
             lifetime = 1.0f; 
             break;
-        case BulletType::GRENADE:
-            damage /= 2; 
-            explosionRadius = 75.0f;
-            lifetime = 2.0f;     
-            vx *= 0.6f;           
-            vy *= 0.6f;
-            break;
         case BulletType::NORMAL:
 
             piercesLeft = 1;

@@ -22,14 +22,13 @@ public:
      float bulletSpeed = 8.0f;
     int bulletDamage = 10;
     int moveSpeed = 1;
-    int bulletSize = 5;
+    int bulletSize = 0;
 
 
     int extraShots = 0;           
     bool shotgun = false;          
     bool diagonalShots = false;
     bool hasLaser = false;    
-    bool hasGrenade = true;
     float fireRateModifier = 1.0f; 
 
     std::vector<PlayerSkill> unlockedSkills;

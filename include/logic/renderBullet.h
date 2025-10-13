@@ -12,7 +12,7 @@ public:
 
   void draw(const Bullet& bullet, SDL_Renderer* renderer, 
                         const Camera& cam, int screenWidth, int screenHeight,
-                        SDL_Texture* playerBulletTexture, SDL_Texture* enemyBulletTexture);
+                        SDL_Texture* playerBulletTexture, SDL_Texture* enemyBulletTexture,int bulletSize);
 };
 
 #endif // RENDERBULLET_H

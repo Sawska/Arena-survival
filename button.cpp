@@ -16,7 +16,6 @@ void Button::draw(SDL_Renderer* renderer, int mouseX, int mouseY) {
         SDL_RenderFillRect(renderer, &rect);
     }
 
-    // draw text
     if (font) {
         SDL_Surface* surf = TTF_RenderText_Solid(font, text.c_str(), {255,255,255,255});
         if (surf) {
