@@ -1,7 +1,10 @@
 # ARENA-GAME
 
-**ARENA-GAME** is a portfolio project showcasing a fast-paced, arcade-style arena survival game. Fight off endless waves of enemies, level up your hero, and choose from a variety of powerful, procedurally-offered skills to create a unique build in every run. The game is powered by a custom C++ game engine built from the ground up using SDL2.
+Problem: To create a significant, professional-grade project to serve as the capstone of a C++ developer portfolio and showcase expertise in game development.
 
+Solution: Built a complete 2D game utilizing modern C++ techniques and graphics libraries. This required the development of both a custom 2D game engine and the full game logic for an arena-survival style experience.
+
+Result: A comprehensive and fully-featured game and engine combination that highlights proficiency in C++ game development, custom engine design, performance optimization, and project management for a freelance portfolio.
 -----
 
 ## 🕹️ How to Play
